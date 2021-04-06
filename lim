@@ -5,10 +5,10 @@ from Lim import Lim
 
 if __name__ == "__main__":
     filepath = sys.argv[1] if len(sys.argv) > 1 else "default.lim"
-    sys.stdout.write("Loading...")
-    sys.stdout.flush()
+    #sys.stdout.write("Loading...")
+    #sys.stdout.flush()
 
     Lim(filepath).main()
 
-    sys.stdout.write("\x1b[2K \x1b[%dD" % len("Loading...1"))
-    sys.stdout.flush()
+    #sys.stdout.write("\x1b[2K \x1b[%dD" % len("Loading...1"))
+    #sys.stdout.flush()

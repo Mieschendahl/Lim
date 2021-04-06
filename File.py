@@ -1,15 +1,17 @@
-import sys, os, errno, re, threading, hashlib
+import sys, os, errno, hashlib, threading
 from Regex import NFA
 from Display import Display
 from Highlight import Highlight
 
 class File:
-    def __init__(self, highlight=None):
-        self.highlight = highlight
+    def __init__(self, highlights=None):
+        self.highlights = [] if highlights is None else highlights
+        self.copies = []
         self.setposition(0, 0)
         self.setselection()
         self.setvirtualcursor(False)
         self.changed = False
+        self.active = False
 
         self.data = [[File.endchar[:]]]
         self.positionstack = []
@@ -36,6 +38,11 @@ class File:
 
         return self.hexhash == newhexhash
 
+    def isactive(self):
+        if self.copies:
+            return any(fl.isactive() for fl in self.copies)
+        return self.active
+
     def ischanged(self):
         return self.changed
 
@@ -61,6 +68,11 @@ class File:
         if ordered and self.isbigger(self.sx, self.sy, self.sx2, self.sy2):
             return self.sx2, self.sy2, self.sx, self.sy
         return self.sx, self.sy, self.sx2, self.sy2
+
+    def getcopies(self):
+        for copy in self.copies:
+            copy.setposition(*self.getposition())
+        return self.copies
 
     def getdata(self):
         return self.data
@@ -151,6 +163,12 @@ class File:
     # Setter
     # ======
 
+    def setactive(self, active=None):
+        if active is None:
+            self.active = not self.active
+        else:
+            self.active = active
+
     def cleardata(self):
         self.setposition(0, 0)
         while self.len() > 1 or self.lencolumn() > 1:
@@ -195,7 +213,7 @@ class File:
     def moveposition(self, dx, dy):
         self.setposition(self.x + dx, self.y + dy)
 
-    def smartsetposition(self, x, y):
+    def smartsetposition(self, x, y): # Should I let this be based on setposition?
         x, y = max(0, x), max(0, y)
         self.y = min(len(self.data) - 1, y)
         self.x = min(len(self.data[self.y]) - 1, x)
@@ -287,8 +305,8 @@ class File:
             if current == "\n":
                 self.data[self.y].extend(self.data.pop(self.y + 1))
 
-        if self.highlight:
-            self.highlight.applyfile(self)
+        if self.highlights:
+            self.highlight()
 
         self.changed = True
         return True
@@ -372,6 +390,44 @@ class File:
     def match(self, regex, stride=1, prefix=True):
         return regex.filerun(self, prefix, stride)
 
+    def highlightall(self):
+        copy1, copy2 = self.getcopies()
+        h1, h2 = self.highlights
+        h1.highlightallwords(copy1)
+        h2.highlightallquotes(copy1)
+        #threading.Thread(target=h1.highlightallwords, args=(copy1,), daemon=False).start()
+        #threading.Thread(target=h2.highlightallquotes, args=(copy1,), daemon=False).start()
+
+    def __highlight(self, h1, copy):
+        h1.highlightwords(copy)
+        h1.highlightquotes(copy)
+
+    def highlight(self):
+        copy1, copy2 = self.getcopies()
+        h1, h2 = self.highlights
+        # h1.highlightallwords(copy1)
+        # h2.highlightallquotes(copy1)
+        threading.Thread(target=self.__highlight, args=(h1, copy1), daemon=False).start()
+
+    def savefile(self, path):
+        charstring = File.compressdata(self.data, File.char, False)
+        dirname, filename = os.path.split(path)
+        File.createpath(dirname)
+        with open(path, "w") as f:
+           f.write(charstring)
+
+        metastring = File.compressdata(self.data, File.usercolor, True)
+        version = "Version:\n" + str(File.version) + "\n"
+        self.hexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
+        hexhash = "Hash:\n" + self.hexhash + "\n"
+        metastring = "Metadata:\n" + metastring + "\n"
+        string = File.seperator1.join([version, hexhash, metastring])
+
+        metapath = File.metadir
+        File.createpath(File.metadir)
+        with open(File.metadir + filename + ".meta", "w") as f:
+            f.write(string)
+
     # classmethods
     # ============
 
@@ -421,29 +477,13 @@ class File:
                 if e.errno != errno.EEXIST:
                     raise e
 
-    def savefile(self, path):
-        charstring = File.compressdata(self.data, File.char, False)
-        dirname, filename = os.path.split(path)
-        File.createpath(dirname)
-        with open(path, "w") as f:
-           f.write(charstring)
-
-        metastring = File.compressdata(self.data, File.usercolor, True)
-        version = "Version:\n" + str(File.version) + "\n"
-        self.hexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
-        hexhash = "Hash:\n" + self.hexhash + "\n"
-        metastring = "Metadata:\n" + metastring + "\n"
-        string = File.seperator1.join([version, hexhash, metastring])
-
-        metapath = File.metadir
-        File.createpath(File.metadir)
-        with open(File.metadir + filename + ".meta", "w") as f:
-            f.write(string)
-
     def loadfile(path, plain):
-        string = ""
         dirname, filename = os.path.split(path)
-        fl = File(Highlight.fromfile(os.path.splitext(path)[1][1 : ]))
+        h1 = Highlight.fromfile(os.path.splitext(path)[1][1 : ])
+        h2 = Highlight(h1.words, h1.starttonum, h1.numtoendquote, h1.numtocolor)
+
+        fl = File([h1, h2])
+        fl.copies = [File(), File()]
 
         try:
             charstring = ""
@@ -461,52 +501,60 @@ class File:
             fl.data = data
             fl.data = fl.data if fl.data else [[File.endchar[:]]]
             fl.hexhash = hashlib.md5((charstring).encode("utf-8")).hexdigest()
+
+            try:
+                string = ""
+                with open(File.metadir + filename + ".meta", "r") as f:
+                    string = f.read()
+
+                version, hexhash, metastring = string.split(File.seperator1)
+                version = version[len("Version:\n"): -1]
+                hexhash = hexhash[len("Hash:\n"): -1]
+                metastring = metastring[len("Metadata:\n"): -1]
+                newhexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
+
+                if version != str(File.version):
+                    raise Exception("Version missmatch, file '%s' with own '%s'." % (version, str(File.version)))
+
+                if hexhash != newhexhash:
+                    raise Exception("File was changed, hash does not match old.")
+
+                data = fl.copydata()
+                File.decompressdata(metastring, data, File.usercolor, True)
+
+                fl.data = data
+                fl.hexhash = hexhash
+            except:
+                fl.flags += ["new meta"]
+
         except FileNotFoundError as e:
             fl.data = [[File.endchar[:]]]
             fl.hexhash = hashlib.md5(("\n").encode("utf-8")).hexdigest()
             fl.flags += ["new file"]
-            return fl
 
-        try:
-            with open(File.metadir + filename + ".meta", "r") as f:
-                string = f.read()
+        for copy in fl.copies:
+            copy.data = fl.data
 
-            version, hexhash, metastring = string.split(File.seperator1)
-            version = version[len("Version:\n"): -1]
-            hexhash = hexhash[len("Hash:\n"): -1]
-            metastring = metastring[len("Metadata:\n"): -1]
-            newhexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
+        fl.highlightall()
 
-            if version != str(File.version):
-                raise Exception("Version missmatch, file '%s' with own '%s'." % (version, str(File.version)))
+        return fl
 
-            if hexhash != newhexhash:
-                raise Exception("File was changed, hash does not match old.")
-
-            data = fl.copydata()
-            File.decompressdata(metastring, data, File.usercolor, True)
-
-            fl.data = data
-            fl.hexhash = hexhash
-            return fl
-        except Exception as e:
-            fl.flags += ["new meta"]
-            return fl
-
-File.version = 1.0
 File.seperator0 = "\x1b\t"
 File.seperator1 = "\x1b\n"
+
+File.version = 1.0
+File.charsize = 4
+
 File.insertcode = "insert"
 File.deletecode = "delete"
 File.newlinecode = "newline"
-
-File.charsize = 4
-File.newchar = File.completechar(" ")
-File.endchar = File.completechar("\n")
 File.insertchar = File.completechar(File.insertcode)
 File.deletechar = File.completechar(File.deletecode)
 File.newlinechar = File.completechar(File.newlinecode)
-File.chartocmd = {"BACKSPACE" : "delete", "NEWLINE" : "newline", "\n" : "newline"}
+File.newchar = File.completechar(" ")
+File.endchar = File.completechar("\n")
+File.chartocmd = {"BACKSPACE" : File.deletecode, "NEWLINE" : File.newlinecode, "\n" : File.newlinecode,
+                  File.deletecode : File.deletecode, File.newlinecode : File.newlinecode, File.insertcode : File.insertcode}
 
 File.char = 0
 File.usercolor = 1
@@ -515,6 +563,7 @@ File.wordcolor = 3
 File.quotemeta = 4
 File.elementdct = {"char" : File.char, "usercolor" : File.usercolor, "quotecolor" : File.quotecolor,
                    "wordcolor" : File.wordcolor, "quotemeta" : File.quotemeta}
+
 File.loggedelements = {File.char, File.usercolor}
 
 File.metadir = ".meta/"

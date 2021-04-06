@@ -20,32 +20,34 @@ class Highlight:
                     return True
         return False
 
-    def highlightall(self, fl):
+    def highlightallwords(self, fl):
+        fl.setactive()
         fl.saveposition()
         fl.setposition(-1, 0)
-        self.highlightquotes(fl, True)
         while True:
             self.lastposition = fl.getposition()
-            success = False
             for word in self.words[1 : ]:
                 left, middle, right, color = word
                 if self.match(fl, middle):
                     fl.setfromto(*self.leftwordposition, *self.rightwordposition, {"wordcolor" : color})
-                    success = True
-                    break
                 fl.setposition(*self.lastposition)
-
-            if not success:
-                fl.setposition(*self.lastposition)
-                fl.setlength(1)
+            fl.setlength(1)
 
             if not fl.contained():
                 break
-        fl.loadposition()
 
-    def applyfile(self, fl):
-        self.highlightwords(fl)
-        self.highlightquotes(fl)
+        fl.loadposition()
+        fl.setactive()
+
+    def highlightallquotes(self, fl):
+        fl.setactive()
+        fl.saveposition()
+
+        fl.setposition(-1, 0)
+        self.highlightquotes(fl, True)
+
+        fl.loadposition()
+        fl.setactive()
 
     def highlightword(self, left, word, right, dct, fl, setall=True):
         x, y = fl.getposition()
@@ -78,13 +80,16 @@ class Highlight:
         return result
 
     def highlightwords(self, fl):
+        fl.setactive()
         fl.saveposition()
         for left, word, right, color in self.words:
             self.highlightword(left, word, right, {"wordcolor" : color}, fl)
             fl.loadposition(True)
         fl.loadposition()
+        fl.setactive()
 
     def highlightquotes(self, fl, full=False):
+        fl.setactive()
         a = fl.getchar()
 
         x, y = fl.getposition()
@@ -143,6 +148,7 @@ class Highlight:
                     if not fl.contained() or (not full and quotemeta[ : -1] == startquote and quotemeta[-1 : ] not in ["e", "s"]):
                         break
         fl.setposition(x, y)
+        fl.setactive()
 
     def stringtoesc(string):
         if type(string) is list:
@@ -213,10 +219,10 @@ class Highlight:
         return Highlight(words, starttonum, numtoendquote, numtocolor)
 
 if Key.system == "Linux":
-    Highlight.settingsdir = ".meta/"
-    # Highlight.settingsdir = "/mnt/d/source/Lim/.meta/"
+    # Highlight.settingsdir = ".lim/"
+    Highlight.settingsdir = "/mnt/d/source/Lim/.lim/"
 else:
-    Highlight.settingsdir = ".meta/"
-    # Highlight.settingsdir = "D:/source/Lim/.meta/"
+    # Highlight.settingsdir = ".lim/"
+    Highlight.settingsdir = "D:/source/Lim/.lim/"
 
 Highlight.colorschemeending = ".scheme"

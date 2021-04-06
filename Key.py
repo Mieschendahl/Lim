@@ -56,7 +56,7 @@ class Key:
 
 Key.closed = False
 
-Key.convertchar = {"\r" : "NEWLINE", "\x7f" : "BACKSPACE", "\x08" : "BACKSPACE"}
+Key.convertchar = {"\r" : "NEWLINE", "\x7f" : "BACKSPACE", "\x08" : "BACKSPACE", "\x1b[Z" : "TAB"}
 
 try:
     import sys, tty, termios

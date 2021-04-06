@@ -250,7 +250,7 @@ class Control:
                 self.mode = "insert"
                 default = cmd[0].islower()
                 cmd = cmd.lower()
-                exec(cmd + "()")
+                newline()
 
             elif cmd:
                 exec(cmd + "()")
@@ -355,6 +355,7 @@ class Control:
                     if force or self.lim.file.issaved(self.lim.path):
                         self.lim.loadfile()
                         self.lim.skipupdate = True
+                        cmdfound = None
                     else:
                         self.lim.cmdfile.cleardata()
                         msg = "Reloading unsaved file needs force!"
@@ -407,7 +408,8 @@ class Control:
 
                 self.resetselection = True
                 fl = self.lim.cmdfile
-                fl.smartsetfromto(0, 0, {"usercolor" : Display.color["green" if cmdfound else "red"]})
+                if cmdfound is not None:
+                    fl.smartsetfromto(0, 0, {"usercolor" : Display.color["green" if cmdfound else "red"]})
 
             elif cmd == "control":
                 self.lim.file.setselection()
@@ -454,7 +456,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       ">" : "queue", "<" : "queue", "y" : "queue", "d" : "queue", "Y" : "queue", "D" : "queue",
                       "C" : "queue", "c" : "queue"}
 
-Control.insertdct = {"\t" : "control", "BTAB" : "tab",
+Control.insertdct = {"\t" : "control", "TAB" : "tab",
                      "LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "down",
                      "SLEFT" : "bigleft", "SRIGHT" : "bigright", "SUP" : "bigup", "SDOWN" : "bigdown",
                      "\x08" : "offsetleft", "\x0c" : "offsetright", "\x0b" : "offsetup", "\n" : "offsetdown",
@@ -462,7 +464,7 @@ Control.insertdct = {"\t" : "control", "BTAB" : "tab",
                      "KUP" : "offsetup", "KDOWN" : "offsetdown",
                      "PPAGE" : "startline", "NPAGE" : "endline"}
 
-Control.replacedct = {"\t" : "control", "BTAB" : "tab", "NEWLINE" : "control",
+Control.replacedct = {"\t" : "control", "TAB" : "tab", "NEWLINE" : "control",
                       "PPAGE" : "startline", "NPAGE" : "endline",
                       "LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "down",
                       "SLEFT" : "bigleft", "SRIGHT" : "bigright", "SUP" : "bigup", "SDOWN" : "bigdown",
@@ -481,5 +483,5 @@ Control.visualdct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "
                      "PPAGE" : "startline", "NPAGE" : "endline",
                      "w" : "nextword", "e" : "wordend", "b" : "wordstart"}
 
-Control.commanddct = {"\t" : "control", "BTAB" : "tab", "NEWLINE" : "execute",
+Control.commanddct = {"\t" : "control", "TAB" : "tab", "NEWLINE" : "execute",
                       "LEFT" : "left", "RIGHT" : "right", "SLEFT" : "bigleft", "SRIGHT" : "bigright"}

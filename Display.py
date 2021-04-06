@@ -45,8 +45,15 @@ class Display:
 
     # The apply functions won't work in async mode, without coping the data.
     def applyfile(self, fl):
+        # data = [[char[:] for char in line] for line in fl.getdata()]
         data = fl.getdata()
-        self.setbufferoffset(*fl.smartgetposition())
+        x, y = fl.smartgetposition()
+        x1, y1, x2, y2 = fl.getselection()
+        x1 -= self.xbufferoffset
+        y1 -= self.ybufferoffset
+        x2 -= self.xbufferoffset
+        y2 -= self.ybufferoffset
+        self.setbufferoffset(x, y)
 
         yoffset = self.yoffset
         if self.reversevert:
@@ -56,16 +63,8 @@ class Display:
         xoffset = self.xoffset
         if self.reversehori:
             xoffset = max(0, self.width - self.xoffset - fl.maxlencolumn(self.ybufferoffset, self.ybufferoffset + self.height) + 1)
-
         self.xcursoroffset = xoffset
         self.ycursoroffset = yoffset
-
-        x, y, x2, y2 = fl.getselection()
-        x -= self.xbufferoffset
-        y -= self.ybufferoffset
-        x2 -= self.xbufferoffset
-        y2 -= self.ybufferoffset
-
         i = 0
         while i < rows:
             line = data[i + self.ybufferoffset]
@@ -74,8 +73,8 @@ class Display:
             while j < columns:
                 char = line[j + self.xbufferoffset][:]
                 pre = ""
-
-                if (i > y or (i == y and j >= x)) and (i < y2 or (i == y2 and j <= x2)):
+                    
+                if (i > y1 or (i == y1 and j >= x1)) and (i < y2 or (i == y2 and j <= x2)):
                     pre = Display.color["black"] + Display.color["greyback"]
                     if char[0] == "\n":
                         char[0] = "^"
@@ -161,9 +160,10 @@ Display.normal = "\x1b[0m"
 Display.crosscolor = Display.grey_to_ansi(7, True)
 
 Display.color = {"grey" : Display.rgb_to_ansi(3, 3, 3), "white" : Display.rgb_to_ansi(5, 5, 5),
-                 "red" : Display.rgb_to_ansi(4, 1, 1), "blue" : Display.rgb_to_ansi(1, 1, 5),
+                 "red" : Display.rgb_to_ansi(4, 1, 1), "blue" : Display.rgb_to_ansi(2, 3, 5),
                  "green" : Display.rgb_to_ansi(1, 4, 1), "yellow" : Display.rgb_to_ansi(4, 4, 1), 
                  "pink" : Display.rgb_to_ansi(4, 1, 4), "cyan" : Display.rgb_to_ansi(1, 4, 4),
                  "purple" : Display.rgb_to_ansi(3, 1, 5), "clear" : "",
                  "black" : Display.rgb_to_ansi(0, 0, 0),
-                 "greyback" : Display.flipansi(Display.rgb_to_ansi(3, 3, 3))}
+                 "greyback" : Display.flipansi(Display.rgb_to_ansi(3, 3, 3)),
+                 "blueback" : Display.flipansi(Display.rgb_to_ansi(1, 1, 3))}

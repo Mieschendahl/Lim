@@ -26,7 +26,6 @@ class Lim:
 
     def loadfile(self):
         self.file = File.loadfile(self.path, False)
-        self.file.highlight.highlightall(self.file)
         self.infofile = File()
         self.cmdfile = File()
 
@@ -52,17 +51,18 @@ class Lim:
 
                 char = self.key.asyncgetchar()
 
-                if not char:
+                if char:
+                    if not self.control.handlechar(char):
+                        break
+
+                    msg = repr(char) + " %d/%dC %d/%dL"
+                    smartx, smarty = self.file.smartgetposition()
+                    msg %= smartx, self.file.lencolumn(), smarty, self.file.len()
+                    self.infofile.cleardata()
+                    self.infofile.smartsetstring(msg, Display.color["blue"])
+
+                elif not self.file.isactive():
                     continue
-
-                if not self.control.handlechar(char):
-                    break
-
-                msg = repr(char) + " %d/%dC %d/%dL"
-                smartx, smarty = self.file.smartgetposition()
-                msg %= smartx, self.file.lencolumn(), smarty, self.file.len()
-                self.infofile.cleardata()
-                self.infofile.smartsetstring(msg, Display.color["red"])
 
                 self.update()
                 self.skipupdate = False

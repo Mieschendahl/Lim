@@ -1,0 +1,27 @@
+<word
+[^a-Z]?[a-Z]+[^a-Z]||__[^\[\](){}\-,;:|+*/%<>=`´^°!?§$&@€µ²³~]___||[^a-Z]?[a-Z]+[^a-Z]||clear
+word>
+
+<word
+[^a-Z]?[a-Z]+[^a-Z]||[^a-Z]__(import|from|class|def|for|in|while|return|lambda|break|continue|try|except|as|raise)__[^a-Z]||[^a-Z]?[a-Z]+[^a-Z]||144
+[^a-Z]?[a-Z]+[^a-Z]||[^a-Z]__(if|else|elif|and|or|not)__[^a-Z]||[^a-Z]?[a-Z]+[^a-Z]||441
+[^a-Z]?[a-Z]+[^a-Z]||[^a-Z]__(True|False|None)__[^a-Z]||[^a-Z]?[a-Z]+[^a-Z]||521
+[^a-Z]?[a-Z]+[^a-Z]||[^a-Z]__(Exception)__[a-Z]*[^a-Z]||[^a-Z]?[a-Z]+[^a-Z]||511
+.||__[\[\](){}\-,;:|+*/%<>=`´^°!?§$&@€µ²³~]__||.||414
+word>
+
+<quote
+...||__"""__||.||blue
+...||__"""__||.
+...||__'''__||.||yellow
+...||__'''__||.
+.||__"__||.||green
+.||__"__||.
+.||__'__||.||pink
+.||__'__||.
+.||__#__||.||401
+.||__\n__||.
+quote>
+
+([^a-Za-Z0-9]|^)(Exception|.*Error.*)([^a-Za-Z0-9]|$) 322
+([^a-Za-Z0-9]|^)[0-9]+([^a-Za-Z0-9]|$) 245

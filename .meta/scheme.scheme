@@ -1,0 +1,9 @@
+<word
+[^a-Z]?[a-Z]+[^a-Z]||__.__||[^a-Z]?[a-Z]+[^a-Z]||clear
+word>
+
+<word
+[^a-Z<]?[a-Z<]+[^a-Z<]||[^a-Z<]__([<]word|word[>])__[^a-Z>]||[^a-Z>]?[a-Z>]+[^a-Z>]||144
+[^a-Z<]?[a-Z<]+[^a-Z<]||[^a-Z<]__([<]quote|quote[>])__[^a-Z>]||[^a-Z>]?[a-Z>]+[^a-Z>]||414
+[^a-Z<]?[a-Z<]+[^a-Z<]||[^a-Z<]__([<]ignore|ignore[>])__[^a-Z>]||[^a-Z>]?[a-Z>]+[^a-Z>]||441
+word>

@@ -231,10 +231,10 @@ class Control:
             elif cmd in ["command", "queue"]:
                 self.mode = "command"
                 self.lim.cmdfile.cleardata()
-                self.lim.cmdfile.smartsetchar(char if cmd == "queue" else ":")
                 self.lim.currentdisplay = self.lim.cmddisplay
 
                 if cmd == "queue":
+                    self.lim.cmdfile.smartsetstring(char + " ")
                     self.resetselection = False
                     if char in ["Y", "D", "C"]:
                         fl.setselection(0, fl.gety(), fl.lencolumn(), fl.gety())
@@ -243,6 +243,8 @@ class Control:
 
                     elif fl.getselection()[0] == -1:
                         fl.setselection(*(fl.getposition() * 2))
+                else:
+                    self.lim.cmdfile.smartsetchar(":")
 
             elif cmd.lower() == "newline":
                 self.mode = "insert"
@@ -340,7 +342,7 @@ class Control:
 
                 ins = fl.getstring().lstrip(":").rstrip("\n") # ins for instruction
                 force = False
-                if ins[0] == "!":
+                if ins and ins[0] == "!":
                     force = True
                     ins = ins[1 : ]
 
@@ -377,13 +379,13 @@ class Control:
 
                     shiftselection()
                     fl.setselection()
-                elif ins[0].lower() in ["y", "d", "c", "p"]:
+                elif ins[ : 2].lower() in ["y ", "d ", "c ", "p "]:
                     lowins = ins[0].lower()
                     fl = self.lim.file
 
                     fl.saveposition()
                     fl.setposition(*fl.getselection()[2 : ])
-                    moves = ins[1 : ]
+                    moves = ins[2 : ]
                     domoves()
                     fl.setupperselection(*fl.getposition())
                     fl.loadposition()

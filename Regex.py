@@ -15,30 +15,40 @@ class NFA:
         return "states:\n" + lst[0] + "\n\nstart:\n" + lst[1] + "\n\nfinal:\n" + lst[2] + "\n\ntransition:\n" + lst[3]
 
     def run(self, word, prefix=True, index=0, stride=1):
+        index += 1
         word = "\n" + word + "\n"
         current = self.start.copy()
         intersection = self.final & current
+        matched = index if intersection else None
 
-        while index >= 0 and index < len(word) and current and not (prefix and intersection):
+        while index >= 0 and index < len(word) and current and not (prefix and matched is not None and not self.greedy):
             newcurrent = set()
             for state in current:
                 dct = self.transition.get(state, {})
                 for key in dct:
                     if re.match(key, word[index]):
                         newcurrent |= dct[key]
+
             current = newcurrent
             intersection = self.final & current
             index += stride
+            matched = index if intersection else matched
+
         if intersection:
-            return index
+            return index - 1
+
+        if prefix and matched is not None:
+            return matched - 1
+
         return None
 
     def filerun(self, fl, prefix=True, stride=1):
         x, y = fl.getposition()
         current = self.start.copy()
         intersection = self.final & current
+        matched = fl.getposition() if intersection else None
 
-        while current and not (prefix and intersection):
+        while current and not (prefix and matched is not None and not self.greedy):
             char = fl.getchar()
             newcurrent = set()
             for state in current:
@@ -46,12 +56,19 @@ class NFA:
                 for key in dct:
                     if re.match(key, char):
                         newcurrent |= dct[key]
+
             current = newcurrent
             intersection = self.final & current
             fl.setlength(stride, False)
+            matched = fl.getposition() if intersection else matched
 
         if intersection:
             return True
+
+        if prefix and matched is not None:
+            fl.setposition(*matched)
+            return True
+
         fl.setposition(x, y)
         return False
 
@@ -165,6 +182,14 @@ class NFA:
         return NFA.concat(nfa, *NFA.__fromregex(regex, index, state))
 
     def fromregex(regex):
-        nfa = NFA.__fromregex(regex)[0]
+        greedy = False
+        newregex = regex
+
+        if regex and "+" == regex[0]:
+            greedy = True
+            newregex = regex[1 : ]
+
+        nfa = NFA.__fromregex(newregex)[0]
+        nfa.greedy = greedy
         nfa.regex = regex
         return nfa

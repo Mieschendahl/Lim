@@ -361,6 +361,15 @@ class Control:
                         msg = "Reloading unsaved file needs force!"
                         self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
                         return True
+                elif ins in ["rs", "restart"]:
+                    if force or self.lim.file.issaved(self.lim.path):
+                        self.lim.restart = True
+                        return False
+                    else:
+                        self.lim.cmdfile.cleardata()
+                        msg = "Restarting unsaved file needs force!"
+                        self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
+                        return True
                 elif ins in ["x", "exit"]:
                     self.lim.file.savefile(self.lim.path)
                     return False

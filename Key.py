@@ -3,7 +3,14 @@ class Key:
         self.chars = []
         self.csi = False
         self.close = False
+        self.trackkeys = False
         # TODO: Make an Escape sequence checker for linux!
+
+    def settrackkeys(self, trackkeys=None):
+        if trackkeys is None:
+            self.trackkeys = not self.trackkeys
+        else:
+            self.trackkeys = trackkeys
 
     def storechar(self):
         while not Key.closed:
@@ -17,6 +24,9 @@ class Key:
                     char = sys.stdin.read(1)
                 finally:
                     termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+                if not self.trackkeys:
+                    continue
 
                 if self.chars and self.chars[-1] == "\x1b" and char == "[":
                     self.csi = True
@@ -36,6 +46,10 @@ class Key:
 
                 if msvcrt.kbhit():
                     char = Key.convertwindowschar.get(msvcrt.getwch(), char)
+
+                if not self.trackkeys:
+                    continue
+
                 self.chars.append(char)
 
         if Key.system == "Windows":

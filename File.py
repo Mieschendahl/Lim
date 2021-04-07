@@ -1,17 +1,15 @@
-import sys, os, errno, hashlib, threading
+import sys, os, errno, hashlib
 from Regex import NFA
 from Display import Display
 from Highlight import Highlight
 
 class File:
-    def __init__(self, highlights=None):
-        self.highlights = [] if highlights is None else highlights
-        self.copies = []
+    def __init__(self, highlight=None):
+        self.highlight = [] if highlight is None else highlight
         self.setposition(0, 0)
         self.setselection()
         self.setvirtualcursor(False)
         self.changed = False
-        self.active = False
 
         self.data = [[File.endchar[:]]]
         self.positionstack = []
@@ -38,11 +36,6 @@ class File:
 
         return self.hexhash == newhexhash
 
-    def isactive(self):
-        if self.copies:
-            return any(fl.isactive() for fl in self.copies)
-        return self.active
-
     def ischanged(self):
         return self.changed
 
@@ -68,11 +61,6 @@ class File:
         if ordered and self.isbigger(self.sx, self.sy, self.sx2, self.sy2):
             return self.sx2, self.sy2, self.sx, self.sy
         return self.sx, self.sy, self.sx2, self.sy2
-
-    def getcopies(self):
-        for copy in self.copies:
-            copy.setposition(*self.getposition())
-        return self.copies
 
     def getdata(self):
         return self.data
@@ -162,12 +150,6 @@ class File:
 
     # Setter
     # ======
-
-    def setactive(self, active=None):
-        if active is None:
-            self.active = not self.active
-        else:
-            self.active = active
 
     def cleardata(self):
         self.setposition(0, 0)
@@ -305,8 +287,8 @@ class File:
             if current == "\n":
                 self.data[self.y].extend(self.data.pop(self.y + 1))
 
-        if self.highlights:
-            self.highlight()
+        if self.highlight:
+            self.highlight.highlight(self)
 
         self.changed = True
         return True
@@ -390,25 +372,6 @@ class File:
     def match(self, regex, stride=1, prefix=True):
         return regex.filerun(self, prefix, stride)
 
-    def highlightall(self):
-        copy1, copy2 = self.getcopies()
-        h1, h2 = self.highlights
-        h1.highlightallwords(copy1)
-        h2.highlightallquotes(copy1)
-        #threading.Thread(target=h1.highlightallwords, args=(copy1,), daemon=False).start()
-        #threading.Thread(target=h2.highlightallquotes, args=(copy1,), daemon=False).start()
-
-    def __highlight(self, h1, copy):
-        h1.highlightwords(copy)
-        h1.highlightquotes(copy)
-
-    def highlight(self):
-        copy1, copy2 = self.getcopies()
-        h1, h2 = self.highlights
-        # h1.highlightallwords(copy1)
-        # h2.highlightallquotes(copy1)
-        threading.Thread(target=self.__highlight, args=(h1, copy1), daemon=False).start()
-
     def savefile(self, path):
         charstring = File.compressdata(self.data, File.char, False)
         dirname, filename = os.path.split(path)
@@ -479,11 +442,7 @@ class File:
 
     def loadfile(path, plain):
         dirname, filename = os.path.split(path)
-        h1 = Highlight.fromfile(os.path.splitext(path)[1][1 : ])
-        h2 = Highlight(h1.words, h1.starttonum, h1.numtoendquote, h1.numtocolor)
-
-        fl = File([h1, h2])
-        fl.copies = [File(), File()]
+        fl = File(Highlight.fromfile(os.path.splitext(path)[1][1 : ]))
 
         try:
             charstring = ""
@@ -532,10 +491,7 @@ class File:
             fl.hexhash = hashlib.md5(("\n").encode("utf-8")).hexdigest()
             fl.flags += ["new file"]
 
-        for copy in fl.copies:
-            copy.data = fl.data
-
-        fl.highlightall()
+        fl.highlight.highlightall(fl)
 
         return fl
 

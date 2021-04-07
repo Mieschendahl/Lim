@@ -20,8 +20,11 @@ class Highlight:
                     return True
         return False
 
+    def highlightall(self, fl):
+        self.highlightallwords(fl)
+        self.highlightallquotes(fl)
+
     def highlightallwords(self, fl):
-        fl.setactive()
         fl.saveposition()
         fl.setposition(-1, 0)
         while True:
@@ -37,29 +40,30 @@ class Highlight:
                 break
 
         fl.loadposition()
-        fl.setactive()
 
     def highlightallquotes(self, fl):
-        fl.setactive()
         fl.saveposition()
 
         fl.setposition(-1, 0)
         self.highlightquotes(fl, True)
 
         fl.loadposition()
-        fl.setactive()
+
+    def highlight(self, fl):
+        self.highlightwords(fl)
+        self.highlightquotes(fl)
 
     def highlightword(self, left, word, right, dct, fl, setall=True):
         x, y = fl.getposition()
         self.leftposition = self.rightposition = (x, y)
 
-        if fl.match(left, -1):
-            fl.setlength(1)
-            self.leftposition = fl.getposition()
-        fl.setposition(x, y)
+        fl.match(left, -1)
+        fl.setlength(1)
+        self.leftposition = fl.getposition()
 
-        if fl.match(right, 1):
-            self.rightposition = fl.getposition()
+        fl.setposition(x, y)
+        fl.match(right, 1)
+        self.rightposition = fl.getposition()
         fl.setposition(*self.leftposition)
 
         result = False
@@ -80,16 +84,13 @@ class Highlight:
         return result
 
     def highlightwords(self, fl):
-        fl.setactive()
         fl.saveposition()
         for left, word, right, color in self.words:
             self.highlightword(left, word, right, {"wordcolor" : color}, fl)
             fl.loadposition(True)
         fl.loadposition()
-        fl.setactive()
 
     def highlightquotes(self, fl, full=False):
-        fl.setactive()
         a = fl.getchar()
 
         x, y = fl.getposition()
@@ -120,7 +121,7 @@ class Highlight:
             if endquote != "":
                 left, middle, right = endquote
                 if self.match(fl, middle):
-                    fl.setfromto(*self.leftwordposition, *self.rightwordposition, {"quotemeta" : startquote + "e", "quotecolor" : color})
+                    fl.setfromto(*self.lastposition, *self.rightwordposition, {"quotemeta" : startquote + "e", "quotecolor" : color})
                     startquote = ""
                     endquote = ""
                     color = ""
@@ -148,7 +149,6 @@ class Highlight:
                     if not fl.contained() or (not full and quotemeta[ : -1] == startquote and quotemeta[-1 : ] not in ["e", "s"]):
                         break
         fl.setposition(x, y)
-        fl.setactive()
 
     def stringtoesc(string):
         if type(string) is list:

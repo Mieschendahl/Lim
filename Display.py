@@ -1,3 +1,5 @@
+import sys, time
+
 class Display:
     def __init__(self, width, height, xoffset=0, yoffset=0, reversehori=False, reversevert=False, effects=None):
         self.width = width
@@ -149,6 +151,28 @@ class Display:
                 output += char
             i += 1
         return output
+
+    def startloading(width):
+        Display.loading = True
+
+        wheel = ["Loading |", "Loading /", "Loading -", "Loading \\"]
+        # wheel = ["Loading .|", "Loading ../", "Loading ...-", "Loading ..\\"]
+        i = 0
+        while Display.loading:
+            l = max(0, width - len(wheel[i]))
+            sys.stdout.write("\x1b[%dD" % width + wheel[i] + " " * l + "\x1b[%dD" % (l - 1))
+            sys.stdout.flush()
+
+            i = (1 + i) % len(wheel)
+            time.sleep(0.1)
+
+        sys.stdout.write("\x1b[2K\x1b[%dD" % width)
+        sys.stdout.flush()
+
+    def stoploading(thread):
+        if Display.loading:
+            Display.loading = False
+            thread.join()
 
 Display.cursor1 = "\x1b[?25h"
 Display.cursor2 = "\x1b[?25l"

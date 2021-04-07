@@ -1,6 +1,7 @@
 import re
 from Display import Display
 from File import File
+from Regex import NFA
 
 class Control:
     def __init__(self, lim):
@@ -193,15 +194,13 @@ class Control:
         if char == "\x03":
             return False
 
-        if char == "\x1b":
-            force = self.charbuffer[-3 : ] == "\x1b\x1b\x1b"
-            res = quit()
+        elif char == "\t" and self.mode == "control":
+            self.lim.file.savefile(self.lim.path)
+            return False
 
-            self.esccount += 1
-            self.lim.cmdfile.smartsetstring(" (" + str(self.esccount) + "/3)", Display.color["red"])
-            return res
-        else:
-            self.esccount = 0
+        elif char == "\x1b":
+            force = self.charbuffer[-2 : ] == "\x1b\x1b"
+            return quit()
 
         mode = self.mode.lower()
 
@@ -232,9 +231,9 @@ class Control:
                 self.mode = "command"
                 self.lim.cmdfile.cleardata()
                 self.lim.currentdisplay = self.lim.cmddisplay
+                self.lim.cmdfile.smartsetchar(char if cmd == "queue" else ":")
 
                 if cmd == "queue":
-                    self.lim.cmdfile.smartsetstring(char + " ")
                     self.resetselection = False
                     if char in ["Y", "D", "C"]:
                         fl.setselection(0, fl.gety(), fl.lencolumn(), fl.gety())
@@ -243,8 +242,6 @@ class Control:
 
                     elif fl.getselection()[0] == -1:
                         fl.setselection(*(fl.getposition() * 2))
-                else:
-                    self.lim.cmdfile.smartsetchar(":")
 
             elif cmd.lower() == "newline":
                 self.mode = "insert"
@@ -341,6 +338,7 @@ class Control:
                 self.lim.currentdisplay = self.lim.filedisplay
 
                 ins = fl.getstring().lstrip(":").rstrip("\n") # ins for instruction
+                ins2 = ins.split()
                 force = False
                 if ins and ins[0] == "!":
                     force = True
@@ -349,6 +347,9 @@ class Control:
                 cmdfound = True
                 if ins == "":
                     pass # display status?
+                elif ins2[0].isdigit():
+                    x = int(ins2[1]) if len(ins2) > 1 and ins2[1].isdigit() else self.lim.file.smartgetx()
+                    self.lim.file.smartsetposition(x, int(ins2[0]))
                 elif ins in ["w", "write"]:
                     self.lim.file.savefile(self.lim.path)
                 elif ins in ["re", "reload"]:
@@ -389,13 +390,13 @@ class Control:
 
                     shiftselection()
                     fl.setselection()
-                elif ins[ : 2].lower() in ["y ", "d ", "c ", "p "]:
+                elif ins[0].lower() in ["y", "d", "c", "p"]:
                     lowins = ins[0].lower()
                     fl = self.lim.file
 
-                    fl.saveposition()
+                    fl.saveposition() # immer noch buggyyy when man von unten nach oben deleted...
                     fl.setposition(*fl.getselection()[2 : ])
-                    moves = ins[2 : ]
+                    moves = ins[1 : ]
                     domoves()
                     fl.setupperselection(*fl.getposition())
                     fl.loadposition()
@@ -412,6 +413,23 @@ class Control:
 
                     if lowins in ["p"]:
                         paste()
+                elif ins[0] in ["f"]:
+                    fl = self.lim.file
+                    nfa = NFA.fromregex(ins[1:])
+
+                    fl.setlowerselection(*fl.getposition())
+                    match = fl.match(nfa)
+                    while fl.contained() and not match:
+                        fl.setlength(1)
+                        fl.setlowerselection(*fl.getposition())
+                        match = fl.match(nfa)
+
+                    if match:
+                        fl.setlength(-1)
+                        fl.setupperselection(*fl.getposition())
+                        fl.setlength(1)
+                    else:
+                        fl.setselection()
                 else:
                     cmdfound = False
 
@@ -463,7 +481,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       "w" : "nextword", "e" : "wordend", "b" : "wordstart",
                       "x" : "deletechar", "p" : "paste", "NEWLINE" : "virtualcursor",
                       ">" : "queue", "<" : "queue", "y" : "queue", "d" : "queue", "Y" : "queue", "D" : "queue",
-                      "C" : "queue", "c" : "queue"}
+                      "C" : "queue", "c" : "queue", "f" : "queue"}
 
 Control.insertdct = {"\t" : "control", "TAB" : "tab",
                      "LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "down",

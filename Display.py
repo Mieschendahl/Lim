@@ -135,7 +135,7 @@ class Display:
         Display.data[y][Display.width - 1] += Display.normal
 
     def outputdisplay():
-        output = Display.normal
+        output = ""
         lastcolor = ""
         i = 0
 
@@ -150,7 +150,8 @@ class Display:
 
                 output += char
             i += 1
-        return output
+
+        return output + Display.normal
 
     def startloading(width):
         Display.loading = True

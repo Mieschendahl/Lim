@@ -74,17 +74,23 @@ class File:
     def getposition(self):
         return self.x, self.y
 
+    def getx(self):
+        return self.getposition()[0]
+
+    def gety(self):
+        return self.getposition()[1]
+
     def smartgetposition(self):
         if self.virtualcursor:
             return self.smartx, self.smarty
 
         return self.x, self.y
 
-    def getx(self):
-        return self.getposition()[0]
+    def smartgetx(self):
+        return self.smartgetposition()[0]
 
-    def gety(self):
-        return self.getposition()[1]
+    def smartgety(self):
+        return self.smartgetposition()[1]
 
     def contained(self):
         return self.y >= 0 and self.y < len(self.data) and self.x >= 0 and self.x < len(self.data[self.y])
@@ -373,6 +379,9 @@ class File:
         return regex.filerun(self, prefix, stride)
 
     def savefile(self, path):
+        if self.issaved(path):
+            return
+
         charstring = File.compressdata(self.data, File.char, False)
         dirname, filename = os.path.split(path)
         File.createpath(dirname)

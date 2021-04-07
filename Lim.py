@@ -83,9 +83,6 @@ class Lim:
             self.skipupdate = False
 
             # 0. Make loading bigscreen in the background
-            # 0.0 quickrestart
-            # 1. Search function
-            # 1.2 Jump function
             # 2. Give me ignorierung von /"
             # 4. Für Quotes reicht es theoretisch, wenn man die öffnenden und schließenden positionen speichert,
             # welche ja geordnet werden können und dann guckt ob ein neues insert/delete eine neue öffnende/schließende

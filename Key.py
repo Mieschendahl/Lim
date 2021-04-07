@@ -2,7 +2,7 @@ class Key:
     def __init__(self):
         self.chars = []
         self.csi = False
-        self.close = False
+        Key.closed = False
         self.trackkeys = False
         # TODO: Make an Escape sequence checker for linux!
 
@@ -67,8 +67,6 @@ class Key:
         Key.closed = True
         sys.stdout.write("\x1b[6n")
         sys.stdout.flush()
-
-Key.closed = False
 
 Key.convertchar = {"\r" : "NEWLINE", "\x7f" : "BACKSPACE", "\x08" : "BACKSPACE", "\x1b[Z" : "TAB"}
 

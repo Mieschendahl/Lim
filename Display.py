@@ -145,7 +145,7 @@ class Display:
                 char, color = char[-1], char[ : -1]
 
                 if lastcolor != color:
-                    output += color if color else Display.normal
+                    output += Display.normal + (color if color else "")
                     lastcolor = color
 
                 output += char

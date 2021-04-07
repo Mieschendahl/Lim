@@ -11,6 +11,7 @@ class Highlight:
         self.numtocolor = numtocolor
 
     def match(self, fl, word):
+        last = fl.getposition()
         leftword, mainword, rightword = word
         if fl.match(leftword, 1):
             self.leftwordposition = fl.getposition()
@@ -18,11 +19,12 @@ class Highlight:
                 self.rightwordposition = fl.getposition()
                 if fl.match(rightword, 1):
                     return True
+        fl.setposition(*last)
         return False
 
     def highlightall(self, fl):
         self.highlightallwords(fl)
-        self.highlightallquotes(fl)
+        # self.highlightallquotes(fl)
 
     def highlightallwords(self, fl):
         fl.saveposition()
@@ -33,7 +35,7 @@ class Highlight:
                 left, middle, right, color = word
                 if self.match(fl, middle):
                     fl.setfromto(*self.leftwordposition, *self.rightwordposition, {"wordcolor" : color})
-                fl.setposition(*self.lastposition)
+                    fl.setposition(*self.lastposition)
             fl.setlength(1)
 
             if not fl.contained():
@@ -51,7 +53,7 @@ class Highlight:
 
     def highlight(self, fl):
         self.highlightwords(fl)
-        self.highlightquotes(fl)
+        # self.highlightquotes(fl) doesn't work perfectly, instead try the binary tree thing...
 
     def highlightword(self, left, word, right, dct, fl, setall=True):
         x, y = fl.getposition()
@@ -76,7 +78,6 @@ class Highlight:
                 result = True
                 fl.setfromto(*self.leftwordposition, *self.rightwordposition, dct)
             else:
-                fl.setposition(*self.lastposition)
                 fl.setlength(1)
 
         if not result:
@@ -91,8 +92,6 @@ class Highlight:
         fl.loadposition()
 
     def highlightquotes(self, fl, full=False):
-        a = fl.getchar()
-
         x, y = fl.getposition()
         fl.setlength(-1)
         state = fl.getelement("quotemeta")[-1 : ]
@@ -102,46 +101,36 @@ class Highlight:
         endquote = self.numtoendquote[startquote]
         color = fl.getelement("quotecolor")
 
-
-        if endquote != "":
-            left, middle, right = endquote
-            if self.highlightword(left, middle, right, {}, fl):
-                fl.setposition(*self.leftposition)
-        else:
-            for quote in self.starttonum:
-                left, middle, right = quote
-                if self.highlightword(left, middle, right, {}, fl):
-                    fl.setposition(*self.leftposition)
-                    break
-
         while True:
-            self.lastposition = fl.getposition()
+            lastposition = fl.getposition()
             quotemeta = fl.getelement("quotemeta")
             success = False
             if endquote != "":
                 left, middle, right = endquote
-                if self.match(fl, middle):
-                    fl.setfromto(*self.lastposition, *self.rightwordposition, {"quotemeta" : startquote + "e", "quotecolor" : color})
-                    startquote = ""
-                    endquote = ""
-                    color = ""
-                    success = True
-                else:
-                    fl.setposition(*self.lastposition)
+                if fl.match(left, -1):
+                    fl.setposition(*lastposition)
+                    if fl.match(middle[1], 1):
+                        fl.setfromto(*lastposition, *fl.getposition(), {"quotemeta" : startquote + "e", "quotecolor" : color})
+                        startquote = ""
+                        endquote = ""
+                        color = ""
+                        success = True
+
             else:
                 for quote in self.starttonum:
                     left, middle, right = quote
-                    if self.match(fl, middle):
-                        startquote = self.starttonum[quote]
-                        endquote = self.numtoendquote[startquote]
-                        color = self.numtocolor[startquote]
-                        success = True
-                        fl.setfromto(*self.leftwordposition, *self.rightwordposition, {"quotemeta" : startquote + "s", "quotecolor" : color})
-                        break
-                    fl.setposition(*self.lastposition)
+                    if fl.match(left, -1):
+                        fl.setposition(*lastposition)
+                        if fl.match(middle[1], 1):
+                            startquote = self.starttonum[quote]
+                            endquote = self.numtoendquote[startquote]
+                            color = self.numtocolor[startquote]
+                            fl.setfromto(*lastposition, *fl.getposition(), {"quotemeta" : startquote + "s", "quotecolor" : color})
+                            success = True
+                            break
 
             if not success:
-                fl.setposition(*self.lastposition)
+                fl.setposition(*lastposition)
                 fl.setelement({"quotemeta" : startquote + ("m" if startquote else ""), "quotecolor" : color})
                 fl.setlength(1)
 

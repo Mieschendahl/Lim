@@ -5,7 +5,6 @@ from Lim import Lim
 
 if __name__ == "__main__":
     filepath = sys.argv[1] if len(sys.argv) > 1 else "default.lim"
-
     while True:
         lim = Lim(filepath)
         if not lim.restart:

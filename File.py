@@ -1,11 +1,11 @@
-import sys, os, errno, hashlib
 from Regex import NFA
 from Display import Display
-from Highlight import Highlight
 
 class File:
-    def __init__(self, highlight=None):
-        self.highlight = [] if highlight is None else highlight
+    def __init__(self, log, highlight=None):
+        self.log = log
+        self.highlight = highlight
+
         self.setposition(0, 0)
         self.setselection()
         self.setvirtualcursor(False)
@@ -17,25 +17,6 @@ class File:
 
     # Getter
     # ======
-
-    def issaved(self, path):
-        charstring = File.compressdata(self.data, File.char, False)
-        newhexhash = hashlib.md5(charstring.encode("utf-8")).hexdigest()
-
-        try:
-            if not {"new file", "new meta"} & set(self.flags):
-                dirname, filename = os.path.split(path)
-                with open(File.metadir + filename + ".meta", "r") as f:
-                    string = f.read()
-
-                charstring = File.compressdata(self.data, File.char, False)
-                metastring = File.compressdata(self.data, File.usercolor, True)
-                newhexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
-        except:
-            pass
-
-        return self.hexhash == newhexhash
-
     def ischanged(self):
         return self.changed
 
@@ -58,7 +39,7 @@ class File:
         return sum(len(line) for line in self.data)
 
     def getselection(self, ordered=True):
-        if ordered and self.isbigger(self.sx, self.sy, self.sx2, self.sy2):
+        if ordered and File.isbigger(self.sx, self.sy, self.sx2, self.sy2):
             return self.sx2, self.sy2, self.sx, self.sy
         return self.sx, self.sy, self.sx2, self.sy2
 
@@ -111,16 +92,13 @@ class File:
             return char
         return char[meta]
 
-    def getelement(self, element):
-        return self.getchar(True)[File.elementdct[element]]
-
     def getstring(self, x=0, y=0, x2=-1, y2=-1, meta=False):
         self.saveposition()
         self.setposition(x, y)
         metastring = []
         string = ""
 
-        while x2 == -1 or not self.isbigger(*self.getposition(), x2, y2):
+        while x2 == -1 or not File.isbigger(*self.getposition(), x2, y2):
             char = self.getchar(True)
             string += char[File.char]
             metastring.append(char)
@@ -133,13 +111,6 @@ class File:
             return string, metastring
         return string
 
-    def getfromposition(self, x, y, element):
-        self.saveposition()
-        self.setposition(x, y)
-        element = self.getelement(element)
-        self.loadposition()
-        return element
-
     def notescaped(self):
         self.file.saveposition()
         switch = True
@@ -147,12 +118,6 @@ class File:
             switch = not switch
         self.loadposition()
         return switch
-
-    def isbigger(self, x, y, x2, y2):
-        return y > y2 or (y == y2 and x > x2)
-
-    def isbiggereq(self, x, y, x2, y2):
-        return y > y2 or (y == y2 and x >= x2)
 
     # Setter
     # ======
@@ -270,21 +235,23 @@ class File:
             length += 1
         return True
 
-    # Nur setchar zu loggen (mit Koordinaten) ist warscheinlich sehr viel effizienter und eleganter
     def setchar(self, char):
-        ch = char[File.char]
+        x, y = self.x, self.y
+        pre = self.getchar(True)[:]
+        post = char[:]
 
+        ch = char[File.char]
         if ch == File.insertcode:
             self.data[self.y].insert(self.x, File.newchar[:])
+        elif ch == File.newlinecode:
+            self.data.insert(self.y + 1, self.data[self.y][self.x + 1 : ])
+            self.data[self.y] = self.data[self.y][ : self.x] + [File.endchar[:]]
         elif ch == File.deletecode:
             if self.y + 1 == len(self.data) and self.x + 1 == len(self.data[self.y]):
                 return False
             if self.getchar() == "\n":
                 self.data[self.y].extend(self.data.pop(self.y + 1))
             self.data[self.y].pop(self.x)
-        elif ch == File.newlinecode:
-            self.data.insert(self.y + 1, self.data[self.y][self.x + 1 : ])
-            self.data[self.y] = self.data[self.y][ : self.x] + [File.endchar[:]]
         else:
             if self.y + 1 == len(self.data) and self.x + 1 == len(self.data[self.y]):
                 return False
@@ -292,6 +259,8 @@ class File:
             self.data[self.y][self.x] = char
             if current == "\n":
                 self.data[self.y].extend(self.data.pop(self.y + 1))
+
+        self.log.add((x, y, pre, post))
 
         if self.highlight:
             self.highlight.highlight(self)
@@ -332,18 +301,12 @@ class File:
         for key in dct:
             self.getchar(True)[File.elementdct[key]] = dct[key]
 
-    def setfromposition(self, x, y, dct):
-        self.saveposition()
-        self.setposition(x, y)
-        self.setelement(dct)
-        self.loadposition()
-
     def setfromto(self, x, y, x2, y2, dct):
         if {"char"} & dct.keys():
             raise Exception("Can't set usercolor and char with 'setfrom' since changes aren't logged.")
 
         self.setposition(x, y)
-        while not self.isbiggereq(*self.getposition(), x2, y2):
+        while not File.isbiggereq(*self.getposition(), x2, y2):
             char = self.getchar(True)
             for key in dct:
                 char[File.elementdct[key]] = dct[key]
@@ -351,13 +314,12 @@ class File:
                 return False
         return True
 
-    def smartsetfromto(self, x, y, dct, x2=None, y2=None, length=0):
-        if x2 is None:
-            y2 = len(self.data) - 1
-            x2 = len(self.data[y2])
+    def setall(self, dct):
+        x = y = 0
+        y2 = len(self.data) - 1
+        x2 = len(self.data[y2])
         self.setposition(x, y)
-        self.setlength(length)
-        self.setfromto(*self.getposition(), x2, y2, dct)
+        self.setfromto(x, y, x2, y2, dct)
 
     def seekprevious(self, condition, full=True):
         distance = 0
@@ -378,136 +340,18 @@ class File:
     def match(self, regex, stride=1, prefix=True):
         return regex.filerun(self, prefix, stride)
 
-    def savefile(self, path):
-        if self.issaved(path):
-            return
-
-        charstring = File.compressdata(self.data, File.char, False)
-        dirname, filename = os.path.split(path)
-        File.createpath(dirname)
-        with open(path, "w") as f:
-           f.write(charstring)
-
-        metastring = File.compressdata(self.data, File.usercolor, True)
-        version = "Version:\n" + str(File.version) + "\n"
-        self.hexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
-        hexhash = "Hash:\n" + self.hexhash + "\n"
-        metastring = "Metadata:\n" + metastring + "\n"
-        string = File.seperator1.join([version, hexhash, metastring])
-
-        metapath = File.metadir
-        File.createpath(File.metadir)
-        with open(File.metadir + filename + ".meta", "w") as f:
-            f.write(string)
-
     # classmethods
     # ============
 
     def completechar(char):
         return [char] + [""] * File.charsize
 
-    def compressdata(data, axis, dynamicsize):
-        string = []
-        counter = 0
-        for line in data:
-            for char in line:
-                ch = char[axis]
-                if dynamicsize and ch == "":
-                    counter += 1
-                else:
-                    if counter:
-                        string.append(str(counter))
-                        counter = 0
-                    string.append(ch)
-        if counter:
-            string.append(str(counter))
+    def isbigger(x, y, x2, y2):
+        return y > y2 or (y == y2 and x > x2)
 
-        if dynamicsize:
-            return File.seperator0.join(string)
-        return "".join(string)
+    def isbiggereq(x, y, x2, y2):
+        return y > y2 or (y == y2 and x >= x2)
 
-    def decompressdata(string, data, axis, dynamicsize):
-        rawdata = string.split(File.seperator0)
-        i = 0
-        counter = 0
-        for line in data:
-            for char in line:
-                if counter:
-                    counter -= 1
-                else:
-                    if dynamicsize and rawdata[i].isdigit():
-                        counter = int(rawdata[i])
-                    else:
-                        char[axis] = rawdata[i]
-                        i += 1
-
-    def createpath(dirname):
-        if dirname and not os.path.exists(dirname):
-            try:
-                os.makedirs(dirname)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise e
-
-    def loadfile(path, plain):
-        dirname, filename = os.path.split(path)
-        fl = File(Highlight.fromfile(os.path.splitext(path)[1][1 : ]))
-
-        try:
-            charstring = ""
-            with open(path, "r") as f:
-                charstring = f.read()
-
-            data = []
-            line = []
-            for char in charstring:
-                line.append(File.completechar(char))
-                if char == "\n":
-                    data.append(line)
-                    line = []
-
-            fl.data = data
-            fl.data = fl.data if fl.data else [[File.endchar[:]]]
-            fl.hexhash = hashlib.md5((charstring).encode("utf-8")).hexdigest()
-
-            try:
-                string = ""
-                with open(File.metadir + filename + ".meta", "r") as f:
-                    string = f.read()
-
-                version, hexhash, metastring = string.split(File.seperator1)
-                version = version[len("Version:\n"): -1]
-                hexhash = hexhash[len("Hash:\n"): -1]
-                metastring = metastring[len("Metadata:\n"): -1]
-                newhexhash = hashlib.md5((charstring + metastring).encode("utf-8")).hexdigest()
-
-                if version != str(File.version):
-                    raise Exception("Version missmatch, file '%s' with own '%s'." % (version, str(File.version)))
-
-                if hexhash != newhexhash:
-                    raise Exception("File was changed, hash does not match old.")
-
-                data = fl.copydata()
-                File.decompressdata(metastring, data, File.usercolor, True)
-
-                fl.data = data
-                fl.hexhash = hexhash
-            except:
-                fl.flags += ["new meta"]
-
-        except FileNotFoundError as e:
-            fl.data = [[File.endchar[:]]]
-            fl.hexhash = hashlib.md5(("\n").encode("utf-8")).hexdigest()
-            fl.flags += ["new file"]
-
-        fl.highlight.highlightall(fl)
-
-        return fl
-
-File.seperator0 = "\x1b\t"
-File.seperator1 = "\x1b\n"
-
-File.version = 1.0
 File.charsize = 4
 
 File.insertcode = "insert"
@@ -530,5 +374,3 @@ File.elementdct = {"char" : File.char, "usercolor" : File.usercolor, "quotecolor
                    "wordcolor" : File.wordcolor, "quotemeta" : File.quotemeta}
 
 File.loggedelements = {File.char, File.usercolor}
-
-File.metadir = ".meta/"

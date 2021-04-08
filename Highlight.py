@@ -1,5 +1,6 @@
 import re
 from Key import Key
+from File import File
 from Regex import NFA
 from Display import Display
 
@@ -30,7 +31,7 @@ class Highlight:
         fl.saveposition()
         for clear, leftborder, rightborder, words in self.groups:
             if clear is not None:
-                fl.smartsetfromto(0, 0, {"wordcolor" : clear})
+                fl.setall({"wordcolor" : clear})
                 break
         fl.setposition(-1, 0)
 
@@ -58,7 +59,7 @@ class Highlight:
                 fl.setfromto(*leftposition, *rightposition, {"wordcolor" : clear})
             fl.setposition(*leftposition)
 
-            while not fl.isbiggereq(*fl.getposition(), *rightposition):
+            while not File.isbiggereq(*fl.getposition(), *rightposition):
                 self.match(fl, words)
                 fl.setlength(1)
             fl.setposition(*lastposition)
@@ -80,7 +81,7 @@ class Highlight:
         result = False
         while setall or not result:
             self.lastposition = fl.getposition()
-            if fl.isbiggereq(*self.lastposition, *self.rightposition):
+            if File.isbiggereq(*self.lastposition, *self.rightposition):
                 break
 
             if self.match(fl, word):

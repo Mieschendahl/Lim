@@ -1,0 +1,22 @@
+group:
+    leftborder:+[ \n]?[^ \n]*[ \n]
+    clear:clear
+    words:
+        leftside:
+        main:
+            color:515
+            [,;:\[\](){}\-\|+*/%<>=`´^°!?§$&@€µ²³~]
+        main:
+            color:515 111
+            [#"'\\]
+    words:
+        leftside:[^a-9_]
+        main:
+            color:551
+            greedy:True
+            [0-9]+
+    words:
+        leftside:[^a-Z_]
+        main:
+            color:155
+            Theory|Theorie

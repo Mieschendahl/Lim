@@ -1,7 +1,8 @@
 import re
-from Display import Display
 from File import File
 from Regex import NFA
+from Display import Display
+from LoadSave import LoadSave
 
 class Control:
     def __init__(self, lim):
@@ -96,8 +97,11 @@ class Control:
         def endcolumn():
             fl.setcolumnend()
 
+        def issaved():
+            return LoadSave.issaved(self.lim.file, self.lim.path)
+
         def quit():
-            if force or self.lim.file.issaved(self.lim.path):
+            if force or issaved():
                 return False
             else:
                 self.lim.cmdfile.cleardata()
@@ -164,8 +168,8 @@ class Control:
             x, y, x2, y2 = fl.getselection()
             fl.setposition(x2, y2)
             fl.setnext()
-            while fl.isbigger(*fl.getposition(), x, y):
-                fl.smartsetchar(File.deletecode)
+            while File.isbigger(*fl.getposition(), x, y):
+                File.smartsetchar(File.deletecode)
 
         def nextword():
             fl.seeknext(lambda a: a not in " \n", False)
@@ -189,13 +193,23 @@ class Control:
         def virtualcursor():
             fl.setvirtualcursor()
 
+        def save():
+            LoadSave.savefile(self.lim.file, self.lim.path)
+
+        def undo():
+            fl.log.undofile(fl)
+
+        def redo():
+            fl.log.redofile(fl)
+
         self.charbuffer = self.charbuffer[max(0, len(self.charbuffer) - Control.maxcharbuffer + 1) : ] + char
 
         if char == "\x03":
+            raise Exception(self.lim.file.log.un)
             return False
 
         elif char == "\t" and self.mode == "control":
-            self.lim.file.savefile(self.lim.path)
+            save()
             return False
 
         elif char == "\x1b":
@@ -323,7 +337,7 @@ class Control:
 
             if self.mode[0].isupper():
                 x, y, x2, y2 = fl.getselection(False)
-                if fl.isbigger(x, y, x2, y2):
+                if File.isbigger(x, y, x2, y2):
                     fl.setselection(fl.lencolumn(y), y, 0, y2)
                 else:
                     fl.setselection(0, y, fl.lencolumn(y2), y2)
@@ -351,9 +365,9 @@ class Control:
                     x = int(ins2[1]) if len(ins2) > 1 and ins2[1].isdigit() else self.lim.file.smartgetx()
                     self.lim.file.smartsetposition(x, int(ins2[0]))
                 elif ins in ["w", "write"]:
-                    self.lim.file.savefile(self.lim.path)
+                    save()
                 elif ins in ["re", "reload"]:
-                    if force or self.lim.file.issaved(self.lim.path):
+                    if force or issaved():
                         self.lim.loadfile()
                         self.lim.skipupdate = True
                         cmdfound = None
@@ -363,7 +377,7 @@ class Control:
                         self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
                         return True
                 elif ins in ["rs", "restart"]:
-                    if force or self.lim.file.issaved(self.lim.path):
+                    if force or issaved():
                         self.lim.restart = True
                         return False
                     else:
@@ -372,7 +386,7 @@ class Control:
                         self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
                         return True
                 elif ins in ["x", "exit"]:
-                    self.lim.file.savefile(self.lim.path)
+                    save()
                     return False
                 elif ins in ["q", "quit"]:
                     return quit()
@@ -436,7 +450,7 @@ class Control:
                 self.resetselection = True
                 fl = self.lim.cmdfile
                 if cmdfound is not None:
-                    fl.smartsetfromto(0, 0, {"usercolor" : Display.color["green" if cmdfound else "red"]})
+                    fl.setall({"usercolor" : Display.color["green" if cmdfound else "red"]})
 
             elif cmd == "control":
                 self.lim.file.setselection()
@@ -481,7 +495,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       "w" : "nextword", "e" : "wordend", "b" : "wordstart",
                       "x" : "deletechar", "p" : "paste", "NEWLINE" : "virtualcursor",
                       ">" : "queue", "<" : "queue", "y" : "queue", "d" : "queue", "Y" : "queue", "D" : "queue",
-                      "C" : "queue", "c" : "queue", "f" : "queue"}
+                      "C" : "queue", "c" : "queue", "f" : "queue", "u" : "undo", "U" : "redo"}
 
 Control.insertdct = {"\t" : "control", "TAB" : "tab",
                      "LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "down",

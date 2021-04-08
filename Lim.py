@@ -1,8 +1,9 @@
 import sys, datetime, threading, time, shutil, hashlib
-from Display import Display
-from Control import Control
-from File import File
 from Key import Key
+from File import File
+from Control import Control
+from Display import Display
+from LoadSave import LoadSave
 
 class Lim:
     def __init__(self, path):
@@ -50,9 +51,9 @@ class Lim:
                 sys.stdout.flush()
 
     def loadfile(self):
-        self.file = File.loadfile(self.path, False)
-        self.infofile = File()
-        self.cmdfile = File()
+        self.file = LoadSave.loadfile(self.path)
+        self.infofile = LoadSave.loadfile()
+        self.cmdfile = LoadSave.loadfile()
 
         self.infofile.smartsetstring(self.now.strftime("%H:%M:%S %d/%m/%Y"), Display.color["blue"])
         self.cmdfile.smartsetstring(" ".join(self.file.flags + [""]))

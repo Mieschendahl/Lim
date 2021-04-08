@@ -288,6 +288,8 @@ class File:
             self.setchar(char)
             self.setnext()
 
+        self.log.add((self.x, self.y, None, None))
+
     def smartsetstring(self, string, color=""):
         for char in string:
             char = File.completechar(char)

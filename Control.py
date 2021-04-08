@@ -205,7 +205,6 @@ class Control:
         self.charbuffer = self.charbuffer[max(0, len(self.charbuffer) - Control.maxcharbuffer + 1) : ] + char
 
         if char == "\x03":
-            raise Exception(self.lim.file.log.un)
             return False
 
         elif char == "\t" and self.mode == "control":

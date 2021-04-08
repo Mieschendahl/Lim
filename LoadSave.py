@@ -87,7 +87,7 @@ class LoadSave:
 
     def loadfile(path=""):
         dirname, filename = os.path.split(path)
-        log = Log(lambda x: re.match("( |newline)", x[-1][File.char]))
+        log = Log(lambda x: x[-1] and re.match("( |newline|delete)", x[-1][File.char]))
         hl = Highlight.fromfile(os.path.splitext(path)[1][1 : ])
         fl = File(log, hl)
 

@@ -19,30 +19,58 @@ class Log:
             self.un.pop(0)
         return True
 
-    def undo(self):
+    def __undo(self):
         if self.un:
             entry = self.un.pop()
             self.re.append(entry)
             return entry
         return "DONE"
 
-    def redo(self):
+    def __redo(self):
         if self.re:
             entry = self.re.pop()
             self.un.append(entry)
             return entry
         return "DONE"
 
-    def undofile(self, fl):
-        self.lock = True
+    def undo(self):
         entry = "STOP"
         while entry == "STOP":
-            entry = self.undo()
+            entry = self.__undo()
 
+        batch = []
         while entry not in ["STOP", "DONE"]:
-            x, y, pre, post = entry
-            ch = post[File.char]
+            batch.append(entry)
+            entry = self.__undo()
 
+        if entry == "STOP":
+            self.un.append(entry)
+            self.re.pop()
+        return batch
+
+    def redo(self):
+        entry = "STOP"
+        while entry == "STOP":
+            entry = self.__redo()
+
+        batch = []
+        while entry not in ["STOP", "DONE"]:
+            batch.append(entry)
+            entry = self.__redo()
+
+        if entry == "STOP":
+            self.re.append(entry)
+            self.un.pop()
+        return batch
+
+    def undofile(self, fl):
+        self.lock = True
+        for entry in self.undo():
+            x, y, pre, post = entry
+            if post is None:
+                fl.setposition(x, y)
+                continue
+            ch = post[File.char]
             fl.setposition(x, y)
             if ch == File.insertcode:
                 fl.setchar(File.deletechar)
@@ -51,22 +79,16 @@ class Log:
                 fl.setchar(pre[:])
             else:
                 fl.setchar(pre[:])
-
-            entry = self.undo()
         self.lock = False
 
     def redofile(self, fl):
         self.lock = True
-        entry = "STOP"
-        while entry == "STOP":
-            entry = self.redo()
-
-        while entry not in ["STOP", "DONE"]:
+        for entry in self.redo():
             x, y, pre, post = entry
+            if post is None:
+                fl.setposition(x, y)
+                continue
             ch = post[File.char]
-
             fl.setposition(x, y)
             fl.setchar(post)
-
-            entry = self.redo()
         self.lock = False

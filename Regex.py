@@ -26,7 +26,7 @@ class NFA:
             for state in current:
                 dct = self.transition.get(state, {})
                 for key in dct:
-                    if re.match(key, word[index]):
+                    if re.match(key, word[index], re.DOTALL):
                         newcurrent |= dct[key]
 
             current = newcurrent
@@ -54,7 +54,7 @@ class NFA:
             for state in current:
                 dct = self.transition.get(state, {})
                 for key in dct:
-                    if re.match(key, char):
+                    if re.match(key, char, re.DOTALL):
                         newcurrent |= dct[key]
 
             current = newcurrent

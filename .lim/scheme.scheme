@@ -1,9 +1,26 @@
-<word
-[^a-Z]?[a-Z]+[^a-Z]||__.__||[^a-Z]?[a-Z]+[^a-Z]||clear
-word>
-
-<word
-[^a-Z<]?[a-Z<]+[^a-Z<]||__([<]word|word[>])__||[^a-Z>]?[a-Z>]+[^a-Z>]||144
-[^a-Z<]?[a-Z<]+[^a-Z<]||__([<]quote|quote[>])__||[^a-Z>]?[a-Z>]+[^a-Z>]||414
-[^a-Z<]?[a-Z<]+[^a-Z<]||__([<]ignore|ignore[>])__||[^a-Z>]?[a-Z>]+[^a-Z>]||441
-word>
+group:
+    leftborder:+[ \n]?[^ \n]*[ \n]
+    clear:clear
+    words:
+        leftside:[: ]
+        rightside:[ \n]
+        main:
+            color:452
+            greedy:True
+            [0-9]+
+        main:
+            color:452
+            red|blue|green|yellow|purple|orange|grey|black|white|clear
+            True|False
+    words:
+        leftside:[^a-Z:]
+        rightside:
+        main:
+            color:415
+            (group|leftborder|rightborder|clear|test):
+        main:
+            color:335
+            (words|leftside|rightside):
+        main:
+            color:155
+            (main|color|greedy):

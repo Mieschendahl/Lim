@@ -4,58 +4,67 @@ from Regex import NFA
 from Display import Display
 
 class Highlight:
-    def __init__(self, words, starttonum, numtoendquote, numtocolor):
-        self.words = words
-        self.starttonum = starttonum
-        self.numtoendquote = numtoendquote
-        self.numtocolor = numtocolor
-
-    def match(self, fl, word):
-        last = fl.getposition()
-        leftword, mainword, rightword = word
-        if fl.match(leftword, 1):
-            self.leftwordposition = fl.getposition()
-            if fl.match(mainword, 1):
-                self.rightwordposition = fl.getposition()
-                if fl.match(rightword, 1):
-                    return True
-        fl.setposition(*last)
-        return False
+    def __init__(self, groups):
+        self.groups = groups
 
     def highlightall(self, fl):
         self.highlightallwords(fl)
-        # self.highlightallquotes(fl)
-
-    def highlightallwords(self, fl):
-        fl.saveposition()
-        fl.setposition(-1, 0)
-        while True:
-            self.lastposition = fl.getposition()
-            for word in self.words[1 : ]:
-                left, middle, right, color = word
-                if self.match(fl, middle):
-                    fl.setfromto(*self.leftwordposition, *self.rightwordposition, {"wordcolor" : color})
-                    fl.setposition(*self.lastposition)
-            fl.setlength(1)
-
-            if not fl.contained():
-                break
-
-        fl.loadposition()
-
-    def highlightallquotes(self, fl):
-        fl.saveposition()
-
-        fl.setposition(-1, 0)
-        self.highlightquotes(fl, True)
-
-        fl.loadposition()
 
     def highlight(self, fl):
         self.highlightwords(fl)
-        # self.highlightquotes(fl) doesn't work perfectly, instead try the binary tree thing...
 
-    def highlightword(self, left, word, right, dct, fl, setall=True):
+    def match(self, fl, words):
+        lastposition = fl.getposition()
+        for leftside, rightside, main in words:
+            if fl.match(leftside, 1):
+                leftwordposition = fl.getposition()
+                for color, word in main:
+                    if fl.match(word, 1):
+                        rightwordposition = fl.getposition()
+                        if fl.match(rightside, 1):
+                            fl.setfromto(*leftwordposition, *rightwordposition, {"wordcolor" : color})
+                        fl.setposition(*leftwordposition)
+                fl.setposition(*lastposition)
+
+    def highlightallwords(self, fl):
+        fl.saveposition()
+        for clear, leftborder, rightborder, words in self.groups:
+            if clear is not None:
+                fl.smartsetfromto(0, 0, {"wordcolor" : clear})
+                break
+        fl.setposition(-1, 0)
+
+        while True:
+            for clear, leftborder, rightborder, words in self.groups:
+                self.match(fl, words)
+            fl.setlength(1)
+            if not fl.contained():
+                break
+        fl.loadposition()
+
+    def highlightwords(self, fl):
+        fl.saveposition()
+        lastposition = fl.getposition()
+        for clear, leftborder, rightborder, words in self.groups:
+            fl.match(leftborder, -1)
+            fl.setlength(1)
+            leftposition = fl.getposition()
+
+            fl.setposition(*lastposition)
+            fl.match(rightborder, 1)
+            rightposition = fl.getposition()
+
+            if clear is not None:
+                fl.setfromto(*leftposition, *rightposition, {"wordcolor" : clear})
+            fl.setposition(*leftposition)
+
+            while not fl.isbiggereq(*fl.getposition(), *rightposition):
+                self.match(fl, words)
+                fl.setlength(1)
+            fl.setposition(*lastposition)
+        fl.loadposition()
+
+    def __highlightword(self, left, word, right, dct, fl, setall=True):
         x, y = fl.getposition()
         self.leftposition = self.rightposition = (x, y)
 
@@ -84,60 +93,12 @@ class Highlight:
             fl.setposition(x, y)
         return result
 
-    def highlightwords(self, fl):
+    def __highlightwords(self, fl):
         fl.saveposition()
         for left, word, right, color in self.words:
             self.highlightword(left, word, right, {"wordcolor" : color}, fl)
             fl.loadposition(True)
         fl.loadposition()
-
-    def highlightquotes(self, fl, full=False):
-        x, y = fl.getposition()
-        fl.setlength(-1)
-        state = fl.getelement("quotemeta")[-1 : ]
-        while fl.getelement("quotemeta")[-1 : ] in ["s", "e"]:
-            fl.setlength(-1)
-        startquote = fl.getelement("quotemeta")[ : -1]
-        endquote = self.numtoendquote[startquote]
-        color = fl.getelement("quotecolor")
-
-        while True:
-            lastposition = fl.getposition()
-            quotemeta = fl.getelement("quotemeta")
-            success = False
-            if endquote != "":
-                left, middle, right = endquote
-                if fl.match(left, -1):
-                    fl.setposition(*lastposition)
-                    if fl.match(middle[1], 1):
-                        fl.setfromto(*lastposition, *fl.getposition(), {"quotemeta" : startquote + "e", "quotecolor" : color})
-                        startquote = ""
-                        endquote = ""
-                        color = ""
-                        success = True
-
-            else:
-                for quote in self.starttonum:
-                    left, middle, right = quote
-                    if fl.match(left, -1):
-                        fl.setposition(*lastposition)
-                        if fl.match(middle[1], 1):
-                            startquote = self.starttonum[quote]
-                            endquote = self.numtoendquote[startquote]
-                            color = self.numtocolor[startquote]
-                            fl.setfromto(*lastposition, *fl.getposition(), {"quotemeta" : startquote + "s", "quotecolor" : color})
-                            success = True
-                            break
-
-            if not success:
-                fl.setposition(*lastposition)
-                fl.setelement({"quotemeta" : startquote + ("m" if startquote else ""), "quotecolor" : color})
-                fl.setlength(1)
-
-                if fl.isbigger(*fl.getposition(), x, y):
-                    if not fl.contained() or (not full and quotemeta[ : -1] == startquote and quotemeta[-1 : ] not in ["e", "s"]):
-                        break
-        fl.setposition(x, y)
 
     def stringtoesc(string):
         if type(string) is list:
@@ -160,52 +121,106 @@ class Highlight:
                 color += Display.flipansi(c) if color != "" else c
         return color
 
+    def sub(sub, string):
+        if sub == string[ : len(sub)]:
+            return len(sub)
+        return -1
+
+    def parsemain(lines):
+        color = None
+        greedy = ""
+        words = []
+        lines2, lines = lines[1 : ], [line[4 : ] for line in lines][1 : ]
+        for index, line in enumerate(lines):
+            if lines2[index][ : 4] != " " * 4:
+                break
+
+            i = Highlight.sub("color:", line)
+            if i >= 0:
+                color = Highlight.rgbtocolor(line[i : ])
+            else:
+                i = Highlight.sub("greedy:", line)
+                if i >= 0:
+                    greedy = "" if "False" == line[i : ] else "+"
+                else:
+                    words.append(line)
+
+        if color is None:
+            raise Exception("A color is missing!")
+
+        return color, NFA.fromregex(greedy + "(" + "|".join(words) + ")")
+
+    def parsewords(lines):
+        leftside = None
+        rightside = None
+        main = []
+        lines = [line[4 : ] for line in lines][1 : ]
+        for index, line in enumerate(lines):
+            if line[ : 1] in " ":
+                continue
+
+            i = Highlight.sub("leftside:", line)
+            if i >= 0:
+                leftside = NFA.fromregex(line[i : ])
+            else:
+                i = Highlight.sub("rightside:", line)
+                if i >= 0:
+                    rightside = NFA.fromregex(line[i : ])
+                else:
+                    i = Highlight.sub("main:", line)
+                    if i >= 0:
+                        main.append(Highlight.parsemain(lines[index : ]))
+                    else:
+                        break
+        rightside = leftside if rightside is None else rightside
+        leftside = rightside if leftside is None else leftside
+        return leftside, rightside, main
+
+    def parsegroup(string):
+        clear = None
+        leftborder = None
+        rightborder = None
+        words = []
+        lines = [Highlight.stringtoesc(line[4 : ]) for line in string.split("\n")][1 : ]
+        for index, line in enumerate(lines):
+            if line[ : 1] in " ":
+                continue
+
+            i = Highlight.sub("leftborder:", line)
+            if i >= 0:
+                leftborder = NFA.fromregex(line[i : ])
+            else:
+                i = Highlight.sub("rightborder:", line)
+                if i >= 0:
+                    rightborder = NFA.fromregex(line[i : ])
+                else:
+                    i = Highlight.sub("clear:", line)
+                    if i >= 0:
+                        clear = Highlight.rgbtocolor(line[i : ])
+                    else:
+                        i = Highlight.sub("words:", line)
+                        if i >= 0:
+                            words.append(Highlight.parsewords(lines[index : ]))
+                        else:
+                            break
+        rightborder = leftborder if rightborder is None else rightborder
+        leftborder = rightborder if leftborder is None else leftborder
+        return clear, leftborder, rightborder, words
+
     def fromfile(fileending):
         string = ""
-        words = []
-        starttonum = {}
-        numtoendquote = {"" : ""}
-        numtocolor = {}
+        groups = []
 
         try:
             with open(Highlight.settingsdir + fileending + Highlight.colorschemeending, "r") as f:
                 string = f.read()
         except FileNotFoundError:
-            return Highlight(words, starttonum, numtoendquote, numtocolor)
+            return Highlight(groups)
 
-        for span in [*re.finditer("<ignore.*?ignore>", string, re.DOTALL)][ : : -1]:
-            span = span.span()
-            string = string[ : span[0]] + string[span[1] : ]
-
-        for group in re.findall("<word.*?word>", string, re.DOTALL):
-            for line in Highlight.stringtoesc(group.split("\n")[1 : -1]):
-                left, word, right, rgb = line.split("||")
-                leftword, mainword, rightword = word.split("__")
-                words.append((NFA.fromregex(left), (NFA.fromregex(leftword), NFA.fromregex(mainword), NFA.fromregex(rightword)), NFA.fromregex(right), Highlight.rgbtocolor(rgb)))
-
-        n = 0
-        start = None
-        for group in re.findall("<quote.*?quote>", string, re.DOTALL):
-            for line in Highlight.stringtoesc(group.split("\n")[1 : -1]):
-                if start is None:
-                    start = line
-                    continue
-
-                left, word, right, rgb = start.split("||")
-                leftword, mainword, rightword = word.split("__")
-                startquote = (NFA.fromregex(left), (NFA.fromregex(leftword), NFA.fromregex(mainword), NFA.fromregex(rightword)), NFA.fromregex(right))
-                color = Highlight.rgbtocolor(rgb)
-
-                left, word, right = line.split("||")
-                leftword, mainword, rightword = word.split("__")
-                endquote = (NFA.fromregex(left), (NFA.fromregex(leftword), NFA.fromregex(mainword), NFA.fromregex(rightword)), NFA.fromregex(right))
-
-                start = None
-                num, n = str(n), n + 1
-                starttonum[startquote] = num
-                numtoendquote[num] = endquote
-                numtocolor[num] = color
-        return Highlight(words, starttonum, numtoendquote, numtocolor)
+        string = "\n" + string + "\n"
+        for match in re.finditer("group:", string):
+            groups.append(Highlight.parsegroup(string[match.span()[0] : ]))
+        return Highlight(groups)
 
 if Key.system == "Linux":
     # Highlight.settingsdir = ".lim/"

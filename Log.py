@@ -1,8 +1,9 @@
 from File import File
 
 class Log:
-    def __init__(self, condition=lambda x: False, limit=1000):
-        self.condition = condition
+    def __init__(self, unsep, resep, limit=1000):
+        self.unsep = unsep
+        self.resep = resep
         self.limit = limit
         self.un = []
         self.re = []
@@ -13,8 +14,6 @@ class Log:
             return False
         self.re = []
         self.un.append(entry)
-        if self.condition(entry):
-            self.un.append("STOP")
         while len(self.un) > self.limit:
             self.un.pop(0)
         return True
@@ -24,43 +23,35 @@ class Log:
             entry = self.un.pop()
             self.re.append(entry)
             return entry
-        return "DONE"
+        return None
 
     def __redo(self):
         if self.re:
             entry = self.re.pop()
             self.un.append(entry)
             return entry
-        return "DONE"
+        return None
 
     def undo(self):
-        entry = "STOP"
-        while entry == "STOP":
-            entry = self.__undo()
-
         batch = []
-        while entry not in ["STOP", "DONE"]:
-            batch.append(entry)
+        while True:
             entry = self.__undo()
-
-        if entry == "STOP":
-            self.un.append(entry)
-            self.re.pop()
+            if entry is None:
+                break
+            batch.append(entry)
+            if self.unsep(batch):
+                break
         return batch
 
     def redo(self):
-        entry = "STOP"
-        while entry == "STOP":
-            entry = self.__redo()
-
         batch = []
-        while entry not in ["STOP", "DONE"]:
-            batch.append(entry)
+        while True:
             entry = self.__redo()
-
-        if entry == "STOP":
-            self.re.append(entry)
-            self.un.pop()
+            if entry is None:
+                break
+            batch.append(entry)
+            if self.resep(batch):
+                break
         return batch
 
     def undofile(self, fl):

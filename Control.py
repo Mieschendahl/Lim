@@ -31,6 +31,11 @@ class Control:
         def down():
             fl.smartmoveposition(0, 1)
 
+        def bigmiddle():
+            limit = dp.height - 1
+            half = limit // 2
+            fl.smartsety(dp.ybufferoffset + half)
+
         def bigleft():
             half = dp.width // 3
             if dp.xcursor > 0:
@@ -169,7 +174,7 @@ class Control:
             fl.setposition(x2, y2)
             fl.setnext()
             while File.isbigger(*fl.getposition(), x, y):
-                File.smartsetchar(File.deletecode)
+                fl.smartsetchar(File.deletecode)
 
         def nextword():
             fl.seeknext(lambda a: a not in " \n", False)
@@ -487,7 +492,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       "BACKSPACE" : "offsetleft",
                       "i" : "insert", ":" : "command", "r" : "replace", "R" : "Replace", "v" : "visual", "V" : "Visual",
                       "h" : "left", "l" : "right", "k" : "up", "j" : "down",
-                      "H" : "bigleft", "L" : "bigright", "K" : "bigup", "J" : "bigdown",
+                      "H" : "bigleft", "L" : "bigright", "K" : "bigup", "J" : "bigdown", "M" : "bigmiddle",
                       "g" : "startline", "G" : "endline", "0" : "startcolumn", "$" : "endcolumn",
                       "PPAGE" : "startline", "NPAGE" : "endline",
                       "o" : "newline", "O" : "Newline", "A" : "endinsert", "I" : "startinsert",
@@ -518,7 +523,7 @@ Control.visualdct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "
                      "KUP" : "offsetup", "KDOWN" : "offsetdown",
                      "\x08" : "offsetleft", "\x0c" : "offsetright", "\x0b" : "offsetup", "\n" : "offsetdown",
                      "h" : "left", "l" : "right", "k" : "up", "j" : "down",
-                     "H" : "bigleft", "L" : "bigright", "K" : "bigup", "J" : "bigdown",
+                     "H" : "bigleft", "L" : "bigright", "K" : "bigup", "J" : "bigdown", "M" : "bigmiddle",
                      "g" : "startline", "G" : "endline", "0" : "startcolumn", "$" : "endcolumn",
                      "PPAGE" : "startline", "NPAGE" : "endline",
                      "w" : "nextword", "e" : "wordend", "b" : "wordstart"}

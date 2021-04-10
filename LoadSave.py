@@ -87,9 +87,55 @@ class LoadSave:
 
     def loadfile(path=""):
         dirname, filename = os.path.split(path)
+
+        class Sep:
+            def undex(self, un, re):
+                i = -1
+                change = False
+                delete = False
+                initdel = False
+                newline = False
+                while len(un) >= -i:
+                    if un[i][-1] and un[i][-1][File.char] == File.deletecode:
+                        initdel = True
+                    elif un[i][-1] and initdel:
+                        delete = True
+
+                    if change and un[i][-1] and un[i][-1][File.char] == File.newlinecode:
+                        newline = True
+
+                    if (initdel and delete) or (change and newline):
+                        break
+
+                    if un[i][-1] is not None:
+                        change = True
+                    i -= 1
+                return i
+
+            def redex(self, re, un):
+                i = -1
+                change = False
+                delete = False
+                initdel = False
+                newline = False
+                while len(re) >= -i:
+                    if re[i][-1] and re[i][-1][File.char] == File.deletecode:
+                        initdel = True
+                    elif re[i][-1] and initdel:
+                        delete = True
+
+                    if change and re[i][-1] and re[i][-1][File.char] == File.newlinecode:
+                        newline = True
+
+                    if (initdel and delete) or (change and newline):
+                        break
+
+                    if re[i][-1] is not None:
+                        change = True
+                    i -= 1
+                return i
         
-        sep = lambda x: x and x[-1][-1] and x[-1][-1][File.char] == "newline"
-        log = Log(sep, sep)
+        log = Log(Sep())
         hl = Highlight.fromfile(os.path.splitext(path)[1][1 : ])
         fl = File(log, hl)
 

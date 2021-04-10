@@ -1,9 +1,8 @@
 from File import File
 
 class Log:
-    def __init__(self, unsep, resep, limit=1000):
-        self.unsep = unsep
-        self.resep = resep
+    def __init__(self, sep, limit=1000):
+        self.sep = sep
         self.limit = limit
         self.un = []
         self.re = []
@@ -18,40 +17,16 @@ class Log:
             self.un.pop(0)
         return True
 
-    def __undo(self):
-        if self.un:
-            entry = self.un.pop()
-            self.re.append(entry)
-            return entry
-        return None
-
-    def __redo(self):
-        if self.re:
-            entry = self.re.pop()
-            self.un.append(entry)
-            return entry
-        return None
-
     def undo(self):
-        batch = []
-        while True:
-            entry = self.__undo()
-            if entry is None:
-                break
-            batch.append(entry)
-            if self.unsep(batch):
-                break
+        index = self.sep.undex(self.un, self.re)
+        self.un, batch = self.un[ : index], self.un[index : ][ : : -1]
+        self.re.extend(batch)
         return batch
 
     def redo(self):
-        batch = []
-        while True:
-            entry = self.__redo()
-            if entry is None:
-                break
-            batch.append(entry)
-            if self.resep(batch):
-                break
+        index = self.sep.redex(self.re, self.un)
+        self.re, batch = self.re[ : index], self.re[index : ][ : : -1]
+        self.un.extend(batch)
         return batch
 
     def undofile(self, fl):

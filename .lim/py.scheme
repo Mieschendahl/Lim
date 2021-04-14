@@ -5,7 +5,7 @@ group:
         leftside:(class|def|lambda|from|import)
         rightside:[\n]
         main:
-            color:515
+            color:313
             greedy:True
             [^\n]*
     words:

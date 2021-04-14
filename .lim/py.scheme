@@ -1,6 +1,20 @@
 group:
-    leftborder:+[ \n]?[^ \n]*[ \n]
+    leftborder:+[\n]?[^\n]*[\n]
     clear:clear
+    words:
+        leftside:(class|def|lambda|from|import)
+        rightside:[\n]
+        main:
+            color:515
+            greedy:True
+            [^\n]*
+    words:
+        leftside:(#)
+        rightside:[\n]
+        main:
+            color:111
+            greedy:True
+            [^\n]*
     words:
         leftside:
         main:
@@ -8,7 +22,10 @@ group:
             [,.;:\[\](){}\-\|+*/%<>=`´^°!?§$&@€µ²³~]
         main:
             color:544 111
-            [#"'\\]
+            ["'\\]
+        main:
+            color:000 111
+            #
     words:
         leftside:[^a-9_]
         main:
@@ -41,14 +58,3 @@ group:
         main:
             color:124
             __(init|call|del|setitem|getitem|iter|name|main)__
-
-group:
-    leftborder:[ \n]?[^ \n]* (ssalc|fed|adbmal)
-    rightborder:[^ \n]*[ \n]
-    words:
-        leftside:(class|def|lambda) 
-        rightside:[\(\n: ]
-        main:
-            color:124
-            greedy:True
-            [a-Z_]*

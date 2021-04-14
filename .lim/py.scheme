@@ -41,3 +41,14 @@ group:
         main:
             color:124
             __(init|call|del|setitem|getitem|iter|name|main)__
+
+group:
+    leftborder:[ \n]?[^ \n]* (ssalc|fed|adbmal)
+    rightborder:[^ \n]*[ \n]
+    words:
+        leftside:(class|def|lambda) 
+        rightside:[\(\n: ]
+        main:
+            color:124
+            greedy:True
+            [a-Z_]*

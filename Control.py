@@ -20,16 +20,16 @@ class Control:
 
     def handlechar(self, char):
         def left():
-            fl.smartmoveposition(-1, 0)
+            fl.smartmove(-1, 0)
 
         def right():
-            fl.smartmoveposition(1, 0)
+            fl.smartmove(1, 0)
 
         def up():
-            fl.smartmoveposition(0, -1)
+            fl.smartmove(0, -1)
 
         def down():
-            fl.smartmoveposition(0, 1)
+            fl.smartmove(0, 1)
 
         def bigmiddle():
             limit = dp.height - 1
@@ -91,7 +91,7 @@ class Control:
             fl.smartsety(y + (y < dp.ybufferoffset))
 
         def startline():
-            fl.setposition(0, 0)
+            fl.set(0, 0)
 
         def endline():
             fl.setend()
@@ -149,7 +149,7 @@ class Control:
             _, y1, _, y2 = fl.getselection()
             for i in range(y1, y2 + 1):
                 n = num
-                fl.setposition(0, i)
+                fl.set(0, i)
                 while n > 0:
                     fl.setchar(" ")
                     n -= 1
@@ -157,7 +157,7 @@ class Control:
                     fl.setchar("")
                     n += 1
 
-            fl.setposition(0, y)
+            fl.set(0, y)
             fl.seeknext(lambda a: a == " ", False)
 
         def paste():
@@ -171,7 +171,7 @@ class Control:
 
         def deleteselection():
             x, y, x2, y2 = fl.getselection()
-            fl.setposition(x2, y2)
+            fl.set(x2, y2)
             fl.move(1)
             while File.isbigger(*fl.getposition(), x, y):
                 fl.setchar("")
@@ -370,7 +370,7 @@ class Control:
                     pass # display status?
                 elif ins2[0].isdigit():
                     x = int(ins2[1]) if len(ins2) > 1 and ins2[1].isdigit() else self.lim.file.smartgetx()
-                    self.lim.file.smartsetposition(x, int(ins2[0]))
+                    self.lim.file.smartset(x, int(ins2[0]))
                 elif ins in ["w", "write"]:
                     save()
                 elif ins in ["re", "reload"]:
@@ -404,7 +404,7 @@ class Control:
                     ins, moves = ins[: span[1]], ins[span[1] : ]
 
                     fl.saveposition()
-                    fl.setposition(*fl.getselection()[2 : ])
+                    fl.set(*fl.getselection()[2 : ])
                     domoves()
                     fl.setupperselection(*fl.getposition())
                     fl.loadposition()
@@ -416,7 +416,7 @@ class Control:
                     fl = self.lim.file
 
                     fl.saveposition() # immer noch buggyyy when man von unten nach oben deleted...
-                    fl.setposition(*fl.getselection()[2 : ])
+                    fl.set(*fl.getselection()[2 : ])
                     moves = ins[1 : ]
                     domoves()
                     fl.setupperselection(*fl.getposition())

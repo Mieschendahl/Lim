@@ -6,7 +6,7 @@ class File:
         self.log = log
         self.highlight = highlight
 
-        self.setposition(0, 0)
+        self.set(0, 0)
         self.setselection()
         self.setvirtualcursor(False)
         self.changed = False
@@ -94,7 +94,7 @@ class File:
 
     def getstring(self, x=0, y=0, x2=-1, y2=-1, meta=False):
         self.saveposition()
-        self.setposition(x, y)
+        self.set(x, y)
         metastring = []
         string = ""
 
@@ -123,7 +123,7 @@ class File:
     # ======
 
     def cleardata(self):
-        self.setposition(0, 0)
+        self.set(0, 0)
         while self.len() > 1 or self.lencolumn() > 1:
             self.setchar("")
 
@@ -151,19 +151,19 @@ class File:
         else:
             self.virtualcursor = virtualcursor
 
-    def setposition(self, x, y):
+    def set(self, x, y):
         self.x = x
         self.y = y
         self.smartx = x
         self.smarty = y
 
     def setx(self, x):
-        self.setposition(x, self.y)
+        self.set(x, self.y)
 
     def sety(self, y):
-        self.setposition(self.x, y)
+        self.set(self.x, y)
 
-    def smartsetposition(self, x, y): # Should I let this be based on setposition?
+    def smartset(self, x, y): # Should I let this be based on set?
         x, y = max(0, x), max(0, y)
         self.y = min(len(self.data) - 1, y)
         self.x = min(len(self.data[self.y]) - 1, x)
@@ -171,24 +171,24 @@ class File:
         self.smarty = y
 
     def smartsetx(self, x):
-        self.smartsetposition(x, self.smarty)
+        self.smartset(x, self.smarty)
 
     def smartsety(self, y):
-        self.smartsetposition(self.smartx, y)
+        self.smartset(self.smartx, y)
 
-    def smartmoveposition(self, dx, dy):
+    def smartmove(self, dx, dy):
         if self.virtualcursor:
-            return self.smartsetposition(self.smartx + dx, self.smarty + dy)
+            return self.smartset(self.smartx + dx, self.smarty + dy)
 
         self.smarty = max(0, min(len(self.data) - 1, self.smarty + dy))
         if dx:
             ylen = len(self.data[self.smarty]) - 1
             self.smartx = max(0, min(ylen, min(ylen, self.smartx) + dx))
-        self.smartsetposition(self.smartx, self.smarty)
+        self.smartset(self.smartx, self.smarty)
 
     def setend(self):
         y = len(self.data) - 1
-        self.setposition(len(self.data[y]) - 1, y)
+        self.set(len(self.data[y]) - 1, y)
 
     def setcolumnend(self):
         self.setx(len(self.data[self.y]) - 1)
@@ -216,7 +216,7 @@ class File:
             else:
                 move, length = length - 1, 0
 
-        self.setposition(x + move * (not edge), y)
+        self.set(x + move * (not edge), y)
         return not move
 
     def setchar(self, char):
@@ -268,7 +268,7 @@ class File:
         if {"char"} & dct.keys():
             raise Exception("Can't set usercolor and char with 'setfrom' since changes aren't logged.")
 
-        self.setposition(x, y)
+        self.set(x, y)
         while not File.isbiggereq(*self.getposition(), x2, y2):
             char = self.getchar(True)
             for key in dct:
@@ -281,7 +281,7 @@ class File:
         x = y = 0
         y2 = len(self.data) - 1
         x2 = len(self.data[y2])
-        self.setposition(x, y)
+        self.set(x, y)
         self.setfromto(x, y, x2, y2, dct)
 
     def seekprevious(self, condition, full=True):

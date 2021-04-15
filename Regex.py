@@ -66,10 +66,10 @@ class NFA:
             return True
 
         if prefix and matched is not None:
-            fl.setposition(*matched)
+            fl.set(*matched)
             return True
 
-        fl.setposition(x, y)
+        fl.set(x, y)
         return False
 
     # Mabe check if there is a copy error with NFA.fromregex("ab") (unreachable states)

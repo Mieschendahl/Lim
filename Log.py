@@ -34,10 +34,10 @@ class Log:
         for entry in self.undo():
             x, y, pre, post = entry
             if post is None:
-                fl.setposition(x, y)
+                fl.set(x, y)
                 continue
             ch = post[File.char]
-            fl.setposition(x, y)
+            fl.set(x, y)
             if ch == File.insertcode:
                 fl.setchar("")
             elif ch == File.deletecode:
@@ -51,9 +51,9 @@ class Log:
         for entry in self.redo():
             x, y, pre, post = entry
             if post is None:
-                fl.setposition(x, y)
+                fl.set(x, y)
                 continue
             ch = post[File.char]
-            fl.setposition(x, y)
+            fl.set(x, y)
             fl.setchar(post[:])
         self.lock = False

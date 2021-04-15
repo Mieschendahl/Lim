@@ -24,8 +24,8 @@ class Highlight:
                         rightwordposition = fl.getposition()
                         if fl.match(rightside, 1):
                             fl.setfromto(*leftwordposition, *rightwordposition, {"wordcolor" : color})
-                        fl.setposition(*leftwordposition)
-                fl.setposition(*lastposition)
+                        fl.set(*leftwordposition)
+                fl.set(*lastposition)
 
     def highlightallwords(self, fl):
         fl.saveposition()
@@ -33,7 +33,7 @@ class Highlight:
             if clear is not None:
                 fl.setall({"wordcolor" : clear})
                 break
-        fl.setposition(-1, 0)
+        fl.set(-1, 0)
 
         while True:
             for clear, leftborder, rightborder, words in self.groups:
@@ -51,18 +51,18 @@ class Highlight:
             fl.move(1, False)
             leftposition = fl.getposition()
 
-            fl.setposition(*lastposition)
+            fl.set(*lastposition)
             fl.match(rightborder, 1)
             rightposition = fl.getposition()
 
             if clear is not None:
                 fl.setfromto(*leftposition, *rightposition, {"wordcolor" : clear})
-            fl.setposition(*leftposition)
+            fl.set(*leftposition)
 
             while not File.isbiggereq(*fl.getposition(), *rightposition):
                 self.match(fl, words)
                 fl.move(1, False)
-            fl.setposition(*lastposition)
+            fl.set(*lastposition)
         fl.loadposition()
 
     def __highlightword(self, left, word, right, dct, fl, setall=True):
@@ -73,10 +73,10 @@ class Highlight:
         fl.move(1, False)
         self.leftposition = fl.getposition()
 
-        fl.setposition(x, y)
+        fl.set(x, y)
         fl.match(right, 1)
         self.rightposition = fl.getposition()
-        fl.setposition(*self.leftposition)
+        fl.set(*self.leftposition)
 
         result = False
         while setall or not result:
@@ -91,7 +91,7 @@ class Highlight:
                 fl.move(1, False)
 
         if not result:
-            fl.setposition(x, y)
+            fl.set(x, y)
         return result
 
     def __highlightwords(self, fl):

@@ -1,19 +1,19 @@
 group:
-    leftborder:+[ \n]?[^ \n]*[ \n]
+    leftborder:+[\n]?[^\n]*[\n]
     clear:clear
     words:
-        leftside:[: ]
-        rightside:[ \n]
+        leftside:(group|words|main|clear|color|greedy):
+        rightside:[\n]
         main:
             color:452
             greedy:True
-            [0-9]+
+            [^\n]*
         main:
             color:452
             red|blue|green|yellow|purple|orange|grey|black|white|clear
             True|False
     words:
-        leftside:[^a-Z:]
+        leftside:[^a-Z]
         rightside:
         main:
             color:415

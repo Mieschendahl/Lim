@@ -2,17 +2,17 @@ group:
     leftborder:+[\n]?[^\n]*[\n]
     clear:clear
     words:
-        leftside:(class|def|lambda|from|import)
+        leftside:[^\\]
+        rightside:[^a-9\\]
+        main:
+            color:100
+            greedy:True
+            (\\)(\\\\)*[a-9]*
+    words:
+        leftside:(class|def|from|import)
         rightside:[\n]
         main:
             color:313
-            greedy:True
-            [^\n]*
-    words:
-        leftside:(#)
-        rightside:[\n]
-        main:
-            color:111
             greedy:True
             [^\n]*
     words:
@@ -21,10 +21,10 @@ group:
             color:544
             [,.;:\[\](){}\-\|+*/%<>=`´^°!?§$&@€µ²³~]
         main:
-            color:544 111
-            ["'\\]
+            color:300
+            ["']
         main:
-            color:000 111
+            color:111
             #
     words:
         leftside:[^a-9_]
@@ -35,7 +35,6 @@ group:
         main:
             color:155
             True|False|None
-            self
     words:
         leftside:[^a-Z_]
         main:
@@ -58,3 +57,4 @@ group:
         main:
             color:124
             __(init|call|del|setitem|getitem|iter|name|main)__
+            self

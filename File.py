@@ -193,10 +193,9 @@ class File:
         if type(char) is not list:
             char = File.completechar(char)
 
-        self.log.add((self.x, self.y, self.getchar(True)[:], char[:]))
-        self.changed = True
-
+        entry = (self.x, self.y, self.getchar(True)[:], char[:])
         ch = char[File.char]
+
         if ch:
             if ch == "\n":
                 self.data.insert(self.y + 1, self.data[self.y][self.x : ])
@@ -205,9 +204,10 @@ class File:
             else:
                 self.data[self.y].insert(self.x, char)
             self.move(1)
-            # quotecolor ersetzen
-            # Ein paar von den codes/chars entfernen
         else:
+            if len(self.data) == 1 and len(self.data[0]) == 1:
+                return False
+
             self.move(-1)
             delch = self.data[self.y].pop(self.x)
             if delch[File.char] == "\n":
@@ -216,13 +216,26 @@ class File:
         if self.highlight:
             self.highlight.highlight(self)
 
+        self.changed = True
+        self.log.add(entry)
         self.log.add((self.x, self.y, None, None))
+
+    def resetchar(self, char):
+        self.move(1)
+        self.setchar("")
+        self.setchar(char)
 
     def setstring(self, string, color=""):
         for char in string:
             char = File.completechar(char)
             char[File.usercolor] = color
             self.setchar(char)
+
+    def resetstring(self, string, color=""):
+        for char in string:
+            char = File.completechar(char)
+            char[File.usercolor] = color
+            self.resetchar(char)
 
     def setelement(self, dct):
         if {"char"} & dct.keys():

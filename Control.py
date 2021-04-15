@@ -301,26 +301,24 @@ class Control:
 
             elif cmd == "tab":
                 for _ in range(4):
-                    ch = fl.getchar()
-                    if not fl.move(1):
-                        break
-                    if ch != "\n":
-                        fl.setchar("")
-                        fl.setchar(" ")
+                    if fl.getchar() == "\n":
+                        fl.move(1)
+                    else:
+                        fl.resetchar(" ")
             elif cmd:
                 exec(cmd + "()")
 
             elif char == "\x7f":
-                if fl.getchar() != "\n":
-                    fl.setchar("")
-                    fl.setchar(" ")
                 fl.move(-1)
+                if fl.getchar() != "\n":
+                    fl.resetchar(" ")
+                    fl.move(-1)
 
             elif char[0] != "\x1b":
-                if fl.getchar() != "\n":
+                if fl.getchar() == "\n":
                     fl.move(1)
-                    fl.setchar("")
-                    fl.setchar(Control.convertchar.get(char, char))
+                else:
+                    fl.resetchar(Control.convertchar.get(char, char))
 
             if self.mode == "replace":
                 fl.move(-1)

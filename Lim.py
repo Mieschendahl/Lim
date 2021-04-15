@@ -16,14 +16,14 @@ class Lim:
             self.time = time.time()
 
             width, height = shutil.get_terminal_size((80, 20))
-            sys.stdout.write(Display.showscreen())
-            sys.stdout.flush()
-
-            self.cuteloading = threading.Thread(target=Display.startloading, args=(width,), daemon=False)
-            self.cuteloading.start()
             Display.setdisplay(width - 1, height)
             self.skipupdate = False
             self.restart = False
+
+            sys.stdout.write(Display.screen(True))
+            sys.stdout.flush()
+            self.cuteloading = threading.Thread(target=Display.startloading, args=(width,), daemon=False)
+            self.cuteloading.start()
 
             self.path = path
             self.now = datetime.datetime.now()
@@ -47,7 +47,7 @@ class Lim:
             Key.close()
             self.asynckey.join()
             if not self.restart:
-                sys.stdout.write(Display.hidescreen())
+                sys.stdout.write(Display.screen(False))
                 sys.stdout.flush()
 
     def loadfile(self):
@@ -83,14 +83,6 @@ class Lim:
             self.update()
             self.skipupdate = False
 
-            # 0. Make loading bigscreen in the background
-            # 2. Give me ignorierung von /"
-            # 4. Für Quotes reicht es theoretisch, wenn man die öffnenden und schließenden positionen speichert,
-            # welche ja geordnet werden können und dann guckt ob ein neues insert/delete eine neue öffnende/schließende
-            # kreiert bzw die position der anderen quotes ändert.
-            # Im Display kann dann geschaut werden, welche chars innerhalb von quotes sind... (wobei es reicht, einmal
-            # die vorherige quote zu checken und dann liniar durchzugehen mit dem displaen des buffers.
-
     def update(self):
         if self.skipupdate:
             return
@@ -100,12 +92,11 @@ class Lim:
         self.filedisplay.applyfile(self.file)
         self.infodisplay.applyfile(self.infofile)
         self.cmddisplay.applyfile(self.cmdfile)
-        # Display.applycross(*self.filedisplay.getcursor())
 
-        display = Display.hidecursor()
+        display = Display.cursor(False)
         display += Display.outputdisplay()
         display += self.currentdisplay.outputcursor()
-        display += Display.showcursor()
+        display += Display.cursor(True)
         sys.stdout.write(display)
         sys.stdout.flush()
 

@@ -39,7 +39,7 @@ class Highlight:
             for clear, leftborder, rightborder, words in self.groups:
                 self.match(fl, words)
             fl.move(1, False)
-            if not fl.inbounds():
+            if not fl.bound():
                 break
         fl.loadposition()
 

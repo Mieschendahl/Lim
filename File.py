@@ -17,6 +17,7 @@ class File:
 
     # Getter
     # ======
+
     def ischanged(self):
         return self.changed
 
@@ -58,7 +59,7 @@ class File:
 
         return self.x, self.y
 
-    def inbounds(self):
+    def bound(self):
         return self.y >= 0 and self.y < len(self.data) and self.x >= 0 and self.x < len(self.data[self.y])
 
     def boundleft(self):
@@ -68,7 +69,7 @@ class File:
         return self.y + 1 >= len(self.data) and self.x + 1 >= len(self.data[self.y])
 
     def getchar(self, meta=False):
-        if self.inbounds():
+        if self.bound():
             char = self.data[self.y][self.x]
         else:
             char = File.newline[:]

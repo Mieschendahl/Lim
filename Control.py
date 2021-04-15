@@ -438,7 +438,7 @@ class Control:
 
                     fl.setlowerselection(*fl.get())
                     match = fl.match(nfa)
-                    while fl.inbounds() and not match:
+                    while fl.bound() and not match:
                         fl.move(1, False)
                         fl.setlowerselection(*fl.get())
                         match = fl.match(nfa)

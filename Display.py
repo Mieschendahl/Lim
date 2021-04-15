@@ -1,14 +1,13 @@
 import sys, time
 
 class Display:
-    def __init__(self, width, height, xoffset=0, yoffset=0, reversehori=False, reversevert=False, effects=None):
+    def __init__(self, width, height, xoffset=0, yoffset=0, reversehori=False, reversevert=False):
         self.width = width
         self.height = height
         self.xoffset = xoffset
         self.yoffset = yoffset
         self.reversehori = reversehori
         self.reversevert = reversevert
-        self.effects = effects if effects else []
 
         self.xbufferoffset = 0
         self.ybufferoffset = 0
@@ -45,9 +44,7 @@ class Display:
 
         self.ycursor = y - self.ybufferoffset
 
-    # The apply functions won't work in async mode, without coping the data.
     def applyfile(self, fl):
-        # data = [[char[:] for char in line] for line in fl.getdata()]
         data = fl.getdata()
         x, y = fl.smartget()
         x1, y1, x2, y2 = fl.getselection()
@@ -106,16 +103,14 @@ class Display:
     def translate(x, y):
         return "\x1b[%d;%dH" % (y + 1, x + 1)
 
-    def showscreen():
-        return Display.buffer1
-        
-    def hidescreen():
+    def screen(show):
+        if show:
+            return Display.buffer1
         return Display.buffer2
 
-    def showcursor():
-        return Display.cursor1
-        
-    def hidecursor():
+    def cursor(show):
+        if show:
+            return Display.cursor1
         return Display.cursor2
 
     def setdisplay(width, height, xoffset=0, yoffset=0):
@@ -126,13 +121,6 @@ class Display:
         for row in Display.data:
             for j, char in enumerate(row):
                 row[j] = value
-
-    def applycross(x, y):
-        for i in range(Display.height):
-            Display.data[i][x] = Display.crosscolor + Display.data[i][x] + Display.normal
-        for j in range(Display.width):
-            Display.data[y][j] = Display.crosscolor + Display.data[y][j]
-        Display.data[y][Display.width - 1] += Display.normal
 
     def outputdisplay():
         output = ""
@@ -154,14 +142,18 @@ class Display:
         return output + Display.normal
 
     def startloading(width):
+        sys.stdout.write(Display.cursor(False))
+        sys.stdout.flush()
         Display.loading = True
 
-        wheel = ["Loading |", "Loading /", "Loading -", "Loading \\"]
-        # wheel = ["Loading .|", "Loading ../", "Loading ...-", "Loading ..\\"]
+        wheel = ["|/-\\", "\\|/-", "-\\|/", "/-\\|"]
+        wheel = [(w + "Loading" + w) * 1000 for w in wheel]
         i = 0
         while Display.loading:
-            l = max(0, width - len(wheel[i]))
-            sys.stdout.write("\x1b[%dD" % width + wheel[i] + " " * l + "\x1b[%dD" % (l - 1))
+            m = max(0, len(wheel[i]) - Display.width) // 2
+            w = wheel[i][m : m + Display.width]
+            l = max(0, width - len(w))
+            sys.stdout.write("\x1b[%dD" % width + w + " " * l + "\x1b[%dD" % (l - 1))
             sys.stdout.flush()
 
             i = (1 + i) % len(wheel)
@@ -172,6 +164,8 @@ class Display:
 
     def stoploading(thread):
         if Display.loading:
+            sys.stdout.write(Display.cursor(True))
+            sys.stdout.flush()
             Display.loading = False
             thread.join()
 

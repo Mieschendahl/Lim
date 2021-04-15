@@ -43,10 +43,10 @@ class NFA:
         return None
 
     def filerun(self, fl, prefix=True, stride=1):
-        x, y = fl.getposition()
+        x, y = fl.get()
         current = self.start.copy()
         intersection = self.final & current
-        matched = fl.getposition() if intersection else None
+        matched = fl.get() if intersection else None
 
         while current and not (prefix and matched is not None and not self.greedy):
             char = fl.getchar()
@@ -60,7 +60,7 @@ class NFA:
             current = newcurrent
             intersection = self.final & current
             fl.move(stride, False)
-            matched = fl.getposition() if intersection else matched
+            matched = fl.get() if intersection else matched
 
         if intersection:
             return True

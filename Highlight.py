@@ -15,13 +15,13 @@ class Highlight:
         self.highlightwords(fl)
 
     def match(self, fl, words):
-        lastposition = fl.getposition()
+        lastposition = fl.get()
         for leftside, rightside, main in words:
             if fl.match(leftside, 1):
-                leftwordposition = fl.getposition()
+                leftwordposition = fl.get()
                 for color, word in main:
                     if fl.match(word, 1):
-                        rightwordposition = fl.getposition()
+                        rightwordposition = fl.get()
                         if fl.match(rightside, 1):
                             fl.setfromto(*leftwordposition, *rightwordposition, {"wordcolor" : color})
                         fl.set(*leftwordposition)
@@ -39,48 +39,48 @@ class Highlight:
             for clear, leftborder, rightborder, words in self.groups:
                 self.match(fl, words)
             fl.move(1, False)
-            if not fl.contained():
+            if not fl.inbounds():
                 break
         fl.loadposition()
 
     def highlightwords(self, fl):
         fl.saveposition()
-        lastposition = fl.getposition()
+        lastposition = fl.get()
         for clear, leftborder, rightborder, words in self.groups:
             fl.match(leftborder, -1)
             fl.move(1, False)
-            leftposition = fl.getposition()
+            leftposition = fl.get()
 
             fl.set(*lastposition)
             fl.match(rightborder, 1)
-            rightposition = fl.getposition()
+            rightposition = fl.get()
 
             if clear is not None:
                 fl.setfromto(*leftposition, *rightposition, {"wordcolor" : clear})
             fl.set(*leftposition)
 
-            while not File.isbiggereq(*fl.getposition(), *rightposition):
+            while not File.isbiggereq(*fl.get(), *rightposition):
                 self.match(fl, words)
                 fl.move(1, False)
             fl.set(*lastposition)
         fl.loadposition()
 
     def __highlightword(self, left, word, right, dct, fl, setall=True):
-        x, y = fl.getposition()
+        x, y = fl.get()
         self.leftposition = self.rightposition = (x, y)
 
         fl.match(left, -1)
         fl.move(1, False)
-        self.leftposition = fl.getposition()
+        self.leftposition = fl.get()
 
         fl.set(x, y)
         fl.match(right, 1)
-        self.rightposition = fl.getposition()
+        self.rightposition = fl.get()
         fl.set(*self.leftposition)
 
         result = False
         while setall or not result:
-            self.lastposition = fl.getposition()
+            self.lastposition = fl.get()
             if File.isbiggereq(*self.lastposition, *self.rightposition):
                 break
 

@@ -49,7 +49,7 @@ class Display:
     def applyfile(self, fl):
         # data = [[char[:] for char in line] for line in fl.getdata()]
         data = fl.getdata()
-        x, y = fl.smartgetposition()
+        x, y = fl.smartget()
         x1, y1, x2, y2 = fl.getselection()
         x1 -= self.xbufferoffset
         y1 -= self.ybufferoffset

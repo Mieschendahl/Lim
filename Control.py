@@ -173,7 +173,7 @@ class Control:
             x, y, x2, y2 = fl.getselection()
             fl.set(x2, y2)
             fl.move(1)
-            while File.isbigger(*fl.getposition(), x, y):
+            while File.isbigger(*fl.get(), x, y):
                 fl.setchar("")
 
         def nextword():
@@ -239,7 +239,7 @@ class Control:
             elif cmd.lower() == "visual":
                 self.resetselection = False
                 self.mode = cmd
-                fl.setselection(*fl.getposition(), *fl.getposition())
+                fl.setselection(*fl.get(), *fl.get())
 
                 if cmd[0].isupper():
                     x, y, x2, y2 = fl.getselection()
@@ -259,7 +259,7 @@ class Control:
                         self.handlechar("\r")
 
                     elif fl.getselection()[0] == -1:
-                        fl.setselection(*(fl.getposition() * 2))
+                        fl.setselection(*(fl.get() * 2))
 
             elif cmd.lower() == "newline":
                 self.mode = "insert"
@@ -340,7 +340,7 @@ class Control:
                 self.handlechar(char)
                 return True
 
-            fl.setupperselection(*fl.getposition())
+            fl.setupperselection(*fl.get())
 
             if self.mode[0].isupper():
                 x, y, x2, y2 = fl.getselection(False)
@@ -406,7 +406,7 @@ class Control:
                     fl.saveposition()
                     fl.set(*fl.getselection()[2 : ])
                     domoves()
-                    fl.setupperselection(*fl.getposition())
+                    fl.setupperselection(*fl.get())
                     fl.loadposition()
 
                     shiftselection()
@@ -419,7 +419,7 @@ class Control:
                     fl.set(*fl.getselection()[2 : ])
                     moves = ins[1 : ]
                     domoves()
-                    fl.setupperselection(*fl.getposition())
+                    fl.setupperselection(*fl.get())
                     fl.loadposition()
 
                     if lowins not in ["p"]:
@@ -438,16 +438,16 @@ class Control:
                     fl = self.lim.file
                     nfa = NFA.fromregex(ins[1:])
 
-                    fl.setlowerselection(*fl.getposition())
+                    fl.setlowerselection(*fl.get())
                     match = fl.match(nfa)
-                    while fl.contained() and not match:
+                    while fl.inbounds() and not match:
                         fl.move(1, False)
-                        fl.setlowerselection(*fl.getposition())
+                        fl.setlowerselection(*fl.get())
                         match = fl.match(nfa)
 
                     if match:
                         fl.move(-1, False)
-                        fl.setupperselection(*fl.getposition())
+                        fl.setupperselection(*fl.get())
                         fl.move(1, False)
                     else:
                         fl.setselection()

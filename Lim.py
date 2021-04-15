@@ -75,7 +75,7 @@ class Lim:
                 break
 
             msg = repr(char) + " %d/%dC %d/%dL"
-            smartx, smarty = self.file.smartgetposition()
+            smartx, smarty = self.file.smartget()
             msg %= smartx, self.file.lencolumn(), smarty, self.file.len()
             self.infofile.cleardata()
             self.infofile.setstring(msg, Display.color["blue"])

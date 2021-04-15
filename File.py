@@ -20,9 +20,6 @@ class File:
     def ischanged(self):
         return self.changed
 
-    def iscleared(self):
-        return not (len(self.data) > 1 or len(self.data[0]) > 1)
-
     def len(self):
         return len(self.data)
 
@@ -52,28 +49,28 @@ class File:
     def saveposition(self):
         self.positionstack.append((self.x, self.y, self.smartx, self.smarty))
 
-    def getposition(self):
+    def get(self):
         return self.x, self.y
 
     def getx(self):
-        return self.getposition()[0]
+        return self.get()[0]
 
     def gety(self):
-        return self.getposition()[1]
+        return self.get()[1]
 
-    def smartgetposition(self):
+    def smartget(self):
         if self.virtualcursor:
             return self.smartx, self.smarty
 
         return self.x, self.y
 
     def smartgetx(self):
-        return self.smartgetposition()[0]
+        return self.smartget()[0]
 
     def smartgety(self):
-        return self.smartgetposition()[1]
+        return self.smartget()[1]
 
-    def contained(self):
+    def inbounds(self):
         return self.y >= 0 and self.y < len(self.data) and self.x >= 0 and self.x < len(self.data[self.y])
 
     def boundleft(self):
@@ -83,7 +80,7 @@ class File:
         return self.y + 1 >= len(self.data) and self.x + 1 >= len(self.data[self.y])
 
     def getchar(self, meta=False):
-        if self.contained():
+        if self.inbounds():
             char = self.data[self.y][self.x]
         else:
             char = File.newline[:]
@@ -98,7 +95,7 @@ class File:
         metastring = []
         string = ""
 
-        while x2 == -1 or not File.isbigger(*self.getposition(), x2, y2):
+        while x2 == -1 or not File.isbigger(*self.get(), x2, y2):
             char = self.getchar(True)
             string += char[File.char]
             metastring.append(char)
@@ -269,7 +266,7 @@ class File:
             raise Exception("Can't set usercolor and char with 'setfrom' since changes aren't logged.")
 
         self.set(x, y)
-        while not File.isbiggereq(*self.getposition(), x2, y2):
+        while not File.isbiggereq(*self.get(), x2, y2):
             char = self.getchar(True)
             for key in dct:
                 char[File.elementdct[key]] = dct[key]

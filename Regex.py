@@ -59,7 +59,7 @@ class NFA:
 
             current = newcurrent
             intersection = self.final & current
-            fl.setlength(stride, False)
+            fl.move(stride, False)
             matched = fl.getposition() if intersection else matched
 
         if intersection:

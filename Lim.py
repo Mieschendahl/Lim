@@ -55,10 +55,10 @@ class Lim:
         self.infofile = LoadSave.loadfile()
         self.cmdfile = LoadSave.loadfile()
 
-        self.infofile.smartsetstring(self.now.strftime("%H:%M:%S %d/%m/%Y"), Display.color["blue"])
-        self.cmdfile.smartsetstring(" ".join(self.file.flags + [""]))
-        self.cmdfile.smartsetstring(self.path, Display.color["green"])
-        self.cmdfile.smartsetstring(" %dTC %dL" % (self.file.lenchars(), self.file.len()))
+        self.infofile.setstring(self.now.strftime("%H:%M:%S %d/%m/%Y"), Display.color["blue"])
+        self.cmdfile.setstring(" ".join(self.file.flags + [""]))
+        self.cmdfile.setstring(self.path, Display.color["green"])
+        self.cmdfile.setstring(" %dTC %dL" % (self.file.lenchars(), self.file.len()))
 
     def loop(self):
         while True:
@@ -78,7 +78,7 @@ class Lim:
             smartx, smarty = self.file.smartgetposition()
             msg %= smartx, self.file.lencolumn(), smarty, self.file.len()
             self.infofile.cleardata()
-            self.infofile.smartsetstring(msg, Display.color["blue"])
+            self.infofile.setstring(msg, Display.color["blue"])
 
             self.update()
             self.skipupdate = False

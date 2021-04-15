@@ -153,7 +153,7 @@ class LoadSave:
                     line = []
 
             fl.data = data
-            fl.data = fl.data if fl.data else [[File.endchar[:]]]
+            fl.data = fl.data if fl.data else [[File.newline[:]]]
             fl.hexhash = hashlib.md5((charstring).encode("utf-8")).hexdigest()
 
             try:
@@ -182,7 +182,7 @@ class LoadSave:
                 fl.flags += ["new meta"]
 
         except FileNotFoundError as e:
-            fl.data = [[File.endchar[:]]]
+            fl.data = [[File.newline[:]]]
             fl.hexhash = hashlib.md5(("\n").encode("utf-8")).hexdigest()
             fl.flags += ["new file"]
 

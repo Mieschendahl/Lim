@@ -68,7 +68,7 @@ class Key:
         sys.stdout.write("\x1b[6n")
         sys.stdout.flush()
 
-Key.convertchar = {"\r" : "NEWLINE", "\x7f" : "BACKSPACE", "\x08" : "BACKSPACE", "\x1b[Z" : "TAB"}
+Key.convertchar = {"\n" : "\r", "\x08" : "\x7f", "\x1b[Z" : "TAB"}
 
 try:
     import sys, tty, termios

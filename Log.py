@@ -39,9 +39,8 @@ class Log:
             ch = post[File.char]
             fl.setposition(x, y)
             if ch == File.insertcode:
-                fl.setchar(File.deletechar)
+                fl.setchar("")
             elif ch == File.deletecode:
-                fl.setchar(File.insertchar)
                 fl.setchar(pre[:])
             else:
                 fl.setchar(pre[:])
@@ -56,5 +55,5 @@ class Log:
                 continue
             ch = post[File.char]
             fl.setposition(x, y)
-            fl.setchar(post)
+            fl.setchar(post[:])
         self.lock = False

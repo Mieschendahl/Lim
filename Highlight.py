@@ -38,7 +38,7 @@ class Highlight:
         while True:
             for clear, leftborder, rightborder, words in self.groups:
                 self.match(fl, words)
-            fl.setlength(1)
+            fl.move(1, False)
             if not fl.contained():
                 break
         fl.loadposition()
@@ -48,7 +48,7 @@ class Highlight:
         lastposition = fl.getposition()
         for clear, leftborder, rightborder, words in self.groups:
             fl.match(leftborder, -1)
-            fl.setlength(1)
+            fl.move(1, False)
             leftposition = fl.getposition()
 
             fl.setposition(*lastposition)
@@ -61,7 +61,7 @@ class Highlight:
 
             while not File.isbiggereq(*fl.getposition(), *rightposition):
                 self.match(fl, words)
-                fl.setlength(1)
+                fl.move(1, False)
             fl.setposition(*lastposition)
         fl.loadposition()
 
@@ -70,7 +70,7 @@ class Highlight:
         self.leftposition = self.rightposition = (x, y)
 
         fl.match(left, -1)
-        fl.setlength(1)
+        fl.move(1, False)
         self.leftposition = fl.getposition()
 
         fl.setposition(x, y)
@@ -88,7 +88,7 @@ class Highlight:
                 result = True
                 fl.setfromto(*self.leftwordposition, *self.rightwordposition, dct)
             else:
-                fl.setlength(1)
+                fl.move(1, False)
 
         if not result:
             fl.setposition(x, y)

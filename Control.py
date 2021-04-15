@@ -111,17 +111,17 @@ class Control:
             else:
                 self.lim.cmdfile.cleardata()
                 msg = "Quitting unsaved file needs force!"
-                self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
+                self.lim.cmdfile.setstring(msg, Display.color["red"])
                 return True
 
         def newline():
             if default:
                 endcolumn()
-                fl.smartsetchar(File.newlinecode)
+                fl.setchar("\n")
             else:
                 startcolumn()
-                fl.smartsetchar(File.newlinecode)
-                fl.setprevious()
+                fl.setchar("\n")
+                fl.move(-1)
 
         def endinsert():
             endcolumn()
@@ -151,20 +151,20 @@ class Control:
                 n = num
                 fl.setposition(0, i)
                 while n > 0:
-                    fl.setchar(File.insertchar)
+                    fl.setchar(" ")
                     n -= 1
                 while n < 0 and fl.getchar() == " ":
-                    fl.setchar(File.deletechar)
+                    fl.setchar("")
                     n += 1
 
             fl.setposition(0, y)
             fl.seeknext(lambda a: a == " ", False)
 
         def paste():
-            fl.smartsetstring(self.copy)
+            fl.setstring(self.copy)
 
         def deletechar():
-            fl.setchar(File.deletechar)
+            fl.setchar("")
 
         def copyselection():
             self.copy = fl.getstring(*fl.getselection())
@@ -172,9 +172,9 @@ class Control:
         def deleteselection():
             x, y, x2, y2 = fl.getselection()
             fl.setposition(x2, y2)
-            fl.setnext()
+            fl.move(1)
             while File.isbigger(*fl.getposition(), x, y):
-                fl.smartsetchar(File.deletecode)
+                fl.setchar("")
 
         def nextword():
             fl.seeknext(lambda a: a not in " \n", False)
@@ -182,18 +182,18 @@ class Control:
 
         def wordend():
             if fl.getchar() not in " \n":
-                fl.setnext()
+                fl.move(1)
             fl.seeknext(lambda a: a in " \n", False)
             fl.seeknext(lambda a: a not in " \n", False)
-            fl.setprevious()
+            fl.move(-1)
 
         def wordstart():
             if fl.getchar() not in " \n":
-                fl.setprevious()
+                fl.move(-1)
             fl.seekprevious(lambda a: a in " \n", False)
             fl.seekprevious(lambda a: a not in " \n", False)
             if not fl.boundleft():
-                fl.setnext()
+                fl.move(1)
 
         def virtualcursor():
             fl.setvirtualcursor()
@@ -249,14 +249,14 @@ class Control:
                 self.mode = "command"
                 self.lim.cmdfile.cleardata()
                 self.lim.currentdisplay = self.lim.cmddisplay
-                self.lim.cmdfile.smartsetchar(char if cmd == "queue" else ":")
+                self.lim.cmdfile.setchar(char if cmd == "queue" else ":")
 
                 if cmd == "queue":
                     self.resetselection = False
                     if char in ["Y", "D", "C"]:
                         fl.setselection(0, fl.gety(), fl.lencolumn(), fl.gety())
                         self.mode = "command"
-                        self.handlechar("NEWLINE")
+                        self.handlechar("\r")
 
                     elif fl.getselection()[0] == -1:
                         fl.setselection(*(fl.getposition() * 2))
@@ -283,13 +283,13 @@ class Control:
                 self.mode = "control"
 
             elif cmd == "tab":
-                fl.smartsetstring("    ")
+                fl.setstring("    ")
 
             elif cmd:
                 exec(cmd + "()")
 
             else:
-                fl.smartsetchar(char)
+                fl.setchar(Control.convertchar.get(char, char))
 
         elif mode == "replace":
             fl = self.lim.file
@@ -302,25 +302,28 @@ class Control:
             elif cmd == "tab":
                 for _ in range(4):
                     if fl.getchar() != "\n":
-                        fl.setchar(File.completechar(" "))
-                    if not fl.setnext():
+                        fl.move(1)
+                        fl.setchar("")
+                        fl.setchar(" ")
+                    if not fl.move(1):
                         break
 
             elif cmd:
                 exec(cmd + "()")
 
-            elif char == "BACKSPACE":
-                fl.setprevious()
+            elif char == "\x7f":
+                fl.move(-1)
                 if fl.getchar() != "\n":
-                    fl.setchar(File.completechar(" "))
+                    fl.setchar(" ")
 
             elif char[0] != "\x1b":
                 if fl.getchar() != "\n":
-                    fl.setchar(File.completechar(char))
-                fl.setnext()
+                    fl.move(1)
+                    fl.setchar("")
+                    fl.setchar(Control.convertchar.get(char, char))
 
             if self.mode[0].islower():
-                fl.setprevious()
+                fl.move(-1)
                 self.mode = "control"
 
         elif mode == "visual":
@@ -378,7 +381,7 @@ class Control:
                     else:
                         self.lim.cmdfile.cleardata()
                         msg = "Reloading unsaved file needs force!"
-                        self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
+                        self.lim.cmdfile.setstring(msg, Display.color["red"])
                         return True
                 elif ins in ["rs", "restart"]:
                     if force or issaved():
@@ -387,7 +390,7 @@ class Control:
                     else:
                         self.lim.cmdfile.cleardata()
                         msg = "Restarting unsaved file needs force!"
-                        self.lim.cmdfile.smartsetstring(msg, Display.color["red"])
+                        self.lim.cmdfile.setstring(msg, Display.color["red"])
                         return True
                 elif ins in ["x", "exit"]:
                     save()
@@ -438,14 +441,14 @@ class Control:
                     fl.setlowerselection(*fl.getposition())
                     match = fl.match(nfa)
                     while fl.contained() and not match:
-                        fl.setlength(1)
+                        fl.move(1, False)
                         fl.setlowerselection(*fl.getposition())
                         match = fl.match(nfa)
 
                     if match:
-                        fl.setlength(-1)
+                        fl.move(-1, False)
                         fl.setupperselection(*fl.getposition())
-                        fl.setlength(1)
+                        fl.move(1, False)
                     else:
                         fl.setselection()
                 else:
@@ -463,13 +466,13 @@ class Control:
                 self.lim.currentdisplay = self.lim.filedisplay
 
             elif cmd == "tab":
-                fl.smartsetstring("    ")
+                fl.setstring("    ")
 
             elif cmd:
                 exec(cmd + "()")
 
             elif char[0] != "\x1b":
-                fl.smartsetchar(char)
+                fl.setchar(Control.convertchar.get(char, char))
 
             if fl.getx() == 0:
                 self.lim.file.setselection()
@@ -489,7 +492,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       "KLEFT" : "offsetleft", "KRIGHT" : "offsetright",
                       "KUP" : "offsetup", "KDOWN" : "offsetdown",
                       "\x08" : "offsetleft", "\x0c" : "offsetright", "\x0b" : "offsetup", "\n" : "offsetdown",
-                      "BACKSPACE" : "offsetleft",
+                      "\x7f" : "offsetleft",
                       "i" : "insert", ":" : "command", "r" : "replace", "R" : "Replace", "v" : "visual", "V" : "Visual",
                       "h" : "left", "l" : "right", "k" : "up", "j" : "down",
                       "H" : "bigleft", "L" : "bigright", "K" : "bigup", "J" : "bigdown", "M" : "bigmiddle",
@@ -497,7 +500,7 @@ Control.controldct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : 
                       "PPAGE" : "startline", "NPAGE" : "endline",
                       "o" : "newline", "O" : "Newline", "A" : "endinsert", "I" : "startinsert",
                       "w" : "nextword", "e" : "wordend", "b" : "wordstart",
-                      "x" : "deletechar", "p" : "paste", "NEWLINE" : "virtualcursor",
+                      "x" : "deletechar", "p" : "paste", "\r" : "virtualcursor",
                       ">" : "queue", "<" : "queue", "y" : "queue", "d" : "queue", "Y" : "queue", "D" : "queue",
                       "C" : "queue", "c" : "queue", "f" : "queue", "u" : "undo", "U" : "redo"}
 
@@ -509,7 +512,7 @@ Control.insertdct = {"\t" : "control", "TAB" : "tab",
                      "KUP" : "offsetup", "KDOWN" : "offsetdown",
                      "PPAGE" : "startline", "NPAGE" : "endline"}
 
-Control.replacedct = {"\t" : "control", "TAB" : "tab", "NEWLINE" : "control",
+Control.replacedct = {"\t" : "control", "TAB" : "tab", "\r" : "control",
                       "PPAGE" : "startline", "NPAGE" : "endline",
                       "LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "down",
                       "SLEFT" : "bigleft", "SRIGHT" : "bigright", "SUP" : "bigup", "SDOWN" : "bigdown",
@@ -528,5 +531,7 @@ Control.visualdct = {"LEFT" : "left", "RIGHT" : "right", "UP" : "up", "DOWN" : "
                      "PPAGE" : "startline", "NPAGE" : "endline",
                      "w" : "nextword", "e" : "wordend", "b" : "wordstart"}
 
-Control.commanddct = {"\t" : "control", "TAB" : "tab", "NEWLINE" : "execute",
+Control.commanddct = {"\t" : "control", "TAB" : "tab", "\r" : "execute",
                       "LEFT" : "left", "RIGHT" : "right", "SLEFT" : "bigleft", "SRIGHT" : "bigright"}
+
+Control.convertchar = {"\r" : "\n", "\x7f" : ""}

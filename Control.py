@@ -34,61 +34,61 @@ class Control:
         def bigmiddle():
             limit = dp.height - 1
             half = limit // 2
-            fl.smartsety(dp.ybufferoffset + half)
+            fl.set(None, dp.ybufferoffset + half)
 
         def bigleft():
             half = dp.width // 3
             if dp.xcursor > 0:
-                fl.smartsetx(dp.xbufferoffset)
+                fl.set(dp.xbufferoffset, None)
             else:
-                fl.smartsetx(dp.xbufferoffset - half)
+                fl.set(dp.xbufferoffset - half, None)
 
         def bigright():
             limit = dp.width - 1
             half = limit // 3
             if dp.xcursor < limit:
-                fl.smartsetx(dp.xbufferoffset + limit)
+                fl.set(dp.xbufferoffset + limit, None)
             else:
-                fl.smartsetx(dp.xbufferoffset + limit + half)
+                fl.set(dp.xbufferoffset + limit + half, None)
 
         def bigup():
             half = dp.height // 3
             if dp.ycursor > 0:
-                fl.smartsety(dp.ybufferoffset)
+                fl.set(None, dp.ybufferoffset)
             else:
-                fl.smartsety(dp.ybufferoffset - half)
+                fl.set(None, dp.ybufferoffset - half)
 
         def bigdown():
             limit = dp.height - 1
             half = limit // 3
             if dp.ycursor < limit:
-                fl.smartsety(dp.ybufferoffset + limit)
+                fl.set(None, dp.ybufferoffset + limit)
             else:
-                fl.smartsety(dp.ybufferoffset + limit + half)
+                fl.set(None, dp.ybufferoffset + limit + half)
 
         def offsetleft():
             l = fl.lencolumn()
             dp.xbufferoffset = max(0, dp.xbufferoffset - 1)
-            x = fl.getx()
-            fl.smartsetx(x - (x >= dp.xbufferoffset + dp.width))
+            x = fl.get()[0]
+            fl.set(x - (x >= dp.xbufferoffset + dp.width), None)
             
         def offsetright():
             l = fl.lencolumn()
             dp.xbufferoffset = min(l, dp.xbufferoffset + 1)
-            x = fl.getx()
-            fl.smartsetx(x + (x < dp.xbufferoffset))
+            x = fl.get()[0]
+            fl.set(x + (x < dp.xbufferoffset), None)
 
         def offsetup():
             l = fl.len()
             dp.ybufferoffset = max(0, dp.ybufferoffset - 1)
-            y = fl.gety()
-            fl.smartsety(y - (y >= dp.ybufferoffset + dp.height))
+            y = fl.get()[1]
+            fl.set(None, y - (y >= dp.ybufferoffset + dp.height))
             
         def offsetdown():
             l = fl.len()
             dp.ybufferoffset = min(l, dp.ybufferoffset + 1)
-            y = fl.gety()
-            fl.smartsety(y + (y < dp.ybufferoffset))
+            y = fl.get()[1]
+            fl.set(None, y + (y < dp.ybufferoffset))
 
         def startline():
             fl.set(0, 0)
@@ -97,7 +97,7 @@ class Control:
             fl.setend()
 
         def startcolumn():
-            fl.setx(0)
+            fl.set(0, None)
 
         def endcolumn():
             fl.setcolumnend()
@@ -145,7 +145,7 @@ class Control:
             else:
                 num = len(ins) - ins.count("<") * 2
 
-            y = fl.gety()
+            y = fl.get()[1]
             _, y1, _, y2 = fl.getselection()
             for i in range(y1, y2 + 1):
                 n = num
@@ -254,7 +254,7 @@ class Control:
                 if cmd == "queue":
                     self.resetselection = False
                     if char in ["Y", "D", "C"]:
-                        fl.setselection(0, fl.gety(), fl.lencolumn(), fl.gety())
+                        fl.setselection(0, fl.get()[1], fl.lencolumn(), fl.get()[1])
                         self.mode = "command"
                         self.handlechar("\r")
 
@@ -369,8 +369,8 @@ class Control:
                 if ins == "":
                     pass # display status?
                 elif ins2[0].isdigit():
-                    x = int(ins2[1]) if len(ins2) > 1 and ins2[1].isdigit() else self.lim.file.smartgetx()
-                    self.lim.file.smartset(x, int(ins2[0]))
+                    x = int(ins2[1]) if len(ins2) > 1 and ins2[1].isdigit() else self.lim.file.smartget()[0]
+                    self.lim.file.set(x, int(ins2[0]))
                 elif ins in ["w", "write"]:
                     save()
                 elif ins in ["re", "reload"]:
@@ -474,7 +474,7 @@ class Control:
             elif char[0] != "\x1b":
                 fl.setchar(Control.convertchar.get(char, char))
 
-            if fl.getx() == 0:
+            if fl.get()[0] == 0:
                 self.lim.file.setselection()
                 self.mode = "control"
                 self.lim.cmdfile.cleardata()

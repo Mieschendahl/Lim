@@ -6,7 +6,7 @@ class File:
         self.log = log
         self.highlight = highlight
 
-        self.set(0, 0)
+        self.set(0, 0, 0, 0)
         self.setselection()
         self.setvirtualcursor(False)
         self.changed = False
@@ -52,23 +52,11 @@ class File:
     def get(self):
         return self.x, self.y
 
-    def getx(self):
-        return self.get()[0]
-
-    def gety(self):
-        return self.get()[1]
-
     def smartget(self):
         if self.virtualcursor:
             return self.smartx, self.smarty
 
         return self.x, self.y
-
-    def smartgetx(self):
-        return self.smartget()[0]
-
-    def smartgety(self):
-        return self.smartget()[1]
 
     def inbounds(self):
         return self.y >= 0 and self.y < len(self.data) and self.x >= 0 and self.x < len(self.data[self.y])
@@ -130,9 +118,6 @@ class File:
         else:
             self.x, self.y, self.smartx, self.smarty = self.positionstack.pop()
 
-    def dropposition(self):
-        self.positionstack.pop()
-
     def setselection(self, x=-1, y=-1, x2=-1, y2=-1):
         self.sx, self.sy, self.sx2, self.sy2 = x, y, x2, y2
 
@@ -148,30 +133,15 @@ class File:
         else:
             self.virtualcursor = virtualcursor
 
-    def set(self, x, y):
-        self.x = x
-        self.y = y
-        self.smartx = x
-        self.smarty = y
+    def set(self, x, y, smartx=None, smarty=None):
+        self.x = self.x if x is None else x
+        self.smartx = self.x if smartx is None else smartx
+        self.y = self.y if y is None else y
+        self.smarty = self.y if smarty is None else smarty
 
-    def setx(self, x):
-        self.set(x, self.y)
-
-    def sety(self, y):
-        self.set(self.x, y)
-
-    def smartset(self, x, y): # Should I let this be based on set?
-        x, y = max(0, x), max(0, y)
-        self.y = min(len(self.data) - 1, y)
-        self.x = min(len(self.data[self.y]) - 1, x)
-        self.smartx = x
-        self.smarty = y
-
-    def smartsetx(self, x):
-        self.smartset(x, self.smarty)
-
-    def smartsety(self, y):
-        self.smartset(self.smartx, y)
+    def smartset(self, smartx, smarty):
+        y = min(len(self.data) - 1, max(0, smarty))
+        self.set(min(len(self.data[y]) - 1, max(0, smartx)), y, smartx, smarty)
 
     def smartmove(self, dx, dy):
         if self.virtualcursor:
@@ -188,7 +158,7 @@ class File:
         self.set(len(self.data[y]) - 1, y)
 
     def setcolumnend(self):
-        self.setx(len(self.data[self.y]) - 1)
+        self.set(len(self.data[self.y]) - 1, None)
 
     def move(self, length, edge=True):
         x, y, move = self.x, self.y, 0
